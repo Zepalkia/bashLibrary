@@ -8,6 +8,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v1
       - name: Shellcheck
         uses: reviewdog/action-shellcheck@v1.0.0
         with:
