@@ -11,3 +11,6 @@ jobs:
     steps:
       - name: Shellcheck
         uses: reviewdog/action-shellcheck@v1.0.0
+        with:
+          path: "./lib"
+          pattern: "*.sh"
