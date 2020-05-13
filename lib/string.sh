@@ -42,3 +42,24 @@ function string_trim() {
     false
   fi
 }
+
+# This function tokenize a string using a given delimiter and store the tokens into an array
+# arg0: The string to tokenize
+# arg1: The delimiter
+# arg2: The name of the variable that will contain the final result (will be an array)
+# Example:
+#   string_tokenize "I;AM;ERROR" ";" array
+#   echo "My name is: ${array[2]}"
+function string_tokenize() {
+  if [[ $# -eq 3 ]]; then
+    local string="$1$2"
+    local -n __TOKENIZED_STRING__=$3
+    __TOKENIZED_STRING__=()
+    while [[ $string ]]; do
+      __TOKENIZED_STRING__+=("${string%%"$2"*}")
+      string=${string#*"$2"}
+    done
+  else
+    false
+  fi
+}

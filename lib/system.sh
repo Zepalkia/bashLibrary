@@ -8,8 +8,7 @@
 function system_commandExists() {
   if [[ $# -eq 2 ]]; then
     local -n __COMMAND_DOES_EXISTS__=$2
-    command -v "$1" &>/dev/null
-    if [[ $? -eq 0 ]]; then
+    if command -v "$1" &>/dev/null; then
       __COMMAND_DOES_EXISTS__=true
     else
       __COMMAND_DOES_EXISTS__=false
@@ -22,8 +21,7 @@ function system_commandExists() {
 function system_packageInstalled() {
   if [[ $# -eq 2 ]]; then
     local -n __PACKAGE_IS_INSTALLED__=$2
-    dpkg -s "$1" &>/dev/null
-    if [[ $? -eq 0 ]]; then
+    if dpkg -s "$1" &>/dev/null; then
       __PACKAGE_IS_INSTALLED__=true
     else
       __PACKAGE_IS_INSTALLED__=false

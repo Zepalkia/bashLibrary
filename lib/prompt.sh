@@ -13,8 +13,9 @@ function prompt_readWithDefault() {
   if [[ $# -eq 2 ]]; then
     local input1=""
     local input2=""
-    local nChars=$(printf "%-$((${#1} + 3))s" " ")
+    local nChars=""
     local -n __READ_VALUE__=$2
+    nChars=$(printf "%-$((${#1} + 3))s" " ")
     echo -en "> ${COLOR_FG_GRAY}$1${COLOR_RESET}"
     tput civis
     read -rn 1 input1
@@ -54,7 +55,7 @@ function prompt_confirmation() {
     local -n __CONFIRMATION_VALUE__=$3
     valid=true
     echo -e "$1"
-    prompt_readWithDefault $2 input
+    prompt_readWithDefault "$2" input
   else
     false
   fi

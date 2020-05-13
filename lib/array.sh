@@ -10,10 +10,10 @@
 # Note:
 #  The index of the first occurence will be returned in case of multiple min values
 function array_argmax() {
-  if [[ $# -eq 3 ]] && [[ "$(declare -p $1)" =~ "declare -a" ]]; then
+  if [[ $# -eq 3 ]] && [[ "$(declare -p "$1")" =~ "declare -a" ]]; then
     local -n __MAXIMUM_VALUE__=$2
     local -n __ARGMAX_VALUE__=$3
-    local mathArray=$1[@]
+    local mathArray="$1[@]"
     local count=0
     local temporaryValue=""
     for value in "${!mathArray}"; do
@@ -34,10 +34,10 @@ function array_argmax() {
 
 
 function array_argmin() {
-  if [[ $# -eq 3 ]] && [[ "$(declare -p $1)" =~ "declare -a" ]]; then
+  if [[ $# -eq 3 ]] && [[ "$(declare -p "$1")" =~ "declare -a" ]]; then
     local -n __MINIMUM_VALUE__=$2
     local -n __ARGMIN_VALUE__=$3
-    local mathArray=$1[@]
+    local mathArray="$1[@]"
     local count=0
     local temporaryValue=""
     for value in "${!mathArray}"; do

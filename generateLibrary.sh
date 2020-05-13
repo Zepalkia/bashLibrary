@@ -35,7 +35,7 @@ if [[ $result == true ]]; then
         line=${line//$macro:/}
         line=$(echo $line | tr -d ' ')
         macro=${macro//\#@}
-        utilities_stringTokenize $line "," tokens
+        string_tokenize $line "," tokens
         case "$macro" in
           PRIORITY)
             echo "-- Component priority: [${tokens[0]}]"
@@ -57,7 +57,7 @@ if [[ $result == true ]]; then
           line=${line//$macro:/}
           line=$(echo $line | tr -d ' ')
           macro=${macro//\#@}
-          utilities_stringTokenize $line "," tokens
+          string_tokenize $line "," tokens
           case "$macro" in
             DEPENDS)
               if [[ $dependencyCheck == true ]]; then

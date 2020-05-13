@@ -4,7 +4,7 @@ function log_open() {
     false
   else
     __IS_LOG_OPEN__=true
-    exec {log_pid}>>$1
+    exec {log_pid}>>"$1"
     # pre-4.1 eval "exec $pid>>$filename"
   fi
 }
@@ -22,9 +22,12 @@ function log_write() {
   if [[ $# -lt 1 ]]; then
     false
   else
-    local timestamp=$(date +%Y-%m-%d:\ %H:%M:%S)
-    local line=$(caller | awk '{print $1}')
-    local from=$(caller | awk '{print $2}')
+    local timestamp=""
+    local line=""
+    local from=""
+    timestamp=$(date +%Y-%m-%d:\ %H:%M:%S)
+    line=$(caller | awk '{print $1}')
+    from=$(caller | awk '{print $2}')
     if [[ -n "$1" ]]; then
       echo -e "[$timestamp] ($from:$line) $1" >&${log_pid}
     else

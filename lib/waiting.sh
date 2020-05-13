@@ -18,7 +18,7 @@ function waiting_spinner() {
     # steps=("⠄" "⠆" "⠇" "⠋" "⠙" "⠸" "⠴" "⠤")
     local index=0
     echo -en "$1 "
-    while [[ $(ps -p $2 | wc -l) -eq 2 ]]; do
+    while [[ $(ps -p "$2" | wc -l) -eq 2 ]]; do
       echo -en "${steps[$index]}\b"
       index=$((++index % ${#steps[@]}))
       sleep 0.1
@@ -35,7 +35,7 @@ function waiting_spinner() {
 #  wating_cursor $!
 function waiting_cursor() {
   if [[ $# -eq 1 ]]; then
-    (waiting_spinner "" $1) &
+    (waiting_spinner "" "$1") &
   else
     false
   fi

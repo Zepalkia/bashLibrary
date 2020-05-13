@@ -37,8 +37,9 @@ function lockable_globalLock() {
 function lockable_globalTryLock() {
   if [[ $# -eq 2 ]]; then
     local -n __TRYLOCK_SUCCESS__=$2
-    local timeStart=$(date +%s)
+    local timeStart=0
     local success=false
+    timeStart=$(date +%s)
     # check $1 is an int !
     while [[ $success == false ]] && [[ $(($(date +%s) - timeStart)) -lt $1 ]]; do
       if mkdir "/tmp/.bashLock" &>/dev/null; then
@@ -62,13 +63,14 @@ function lockable_globalTryLock() {
 #   The same process is expected to run the lock AND the unlock, globalUnlock() will work in case a process that called the lock is not active anymore but this
 #   is only a 'security' patch that should actually never be triggered is the program using it has been designed properly
 function lockable_globalUnlock() {
-  local lockfile=$(find /tmp/.bashLock -name "$$")
+  local lockfile=
+  lockfile=$(find /tmp/.bashLock -name "$$")
   if [[ "$lockfile" != "" ]]; then
-    rm -f $lockfile
+    rm -f "$lockfile"
     rmdir /tmp/.bashLock
   else
     lockfile=$(basename /tmp/.bashLock/*)
-    if [[ $(ps -p $lockfile | wc -l) -le 1 ]]; then
+    if [[ $(ps -p "$lockfile" | wc -l) -le 1 ]]; then
       rm -f "/tmp/.bashLock/$lockfile"
       rmdir /tmp/.bashLock
     fi

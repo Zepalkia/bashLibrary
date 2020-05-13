@@ -24,7 +24,7 @@ function ui_echoWindow() {
   local yOrigin=$2
   local message="$4"
   local width=0
-  math_min $(($(tput cols) - xOrigin - 3)) $3 width
+  math_min $(($(tput cols) - xOrigin - 3)) "$3" width
 
   tput rc
 }

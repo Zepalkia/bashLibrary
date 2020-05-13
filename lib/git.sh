@@ -13,10 +13,13 @@ function git_branchExists() {
   if [[ $# -eq 2 ]]; then
     local -n __GIT_BRANCH_EXISTS__=$2
     __GIT_BRANCH_EXISTS__=true
-    git show-ref --verify --quiet "refs/heads/$1"
-    [[ $? -ne 0 ]] && git show-ref --verify --quiet "refs/tags/$1"
-    [[ $? -ne 0 ]] && git show-ref --verify --quiet "refs/remotes/origin/$1"
-    [[ $? -ne 0 ]] && __GIT_BRANCH_EXISTS__=false
+    if ! git show-ref --verify --quiet "refs/heads/$1"; then
+      if ! git show-ref --verify --quiet "refs/tags/$1"; then
+        if ! git show-ref --verify --quiet "refs/remotes/origin/$1"; then
+          __GIT_BRANCH_EXISTS__=false
+          fi
+      fi
+    fi
   else
     false
   fi
