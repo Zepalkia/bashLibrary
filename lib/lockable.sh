@@ -63,7 +63,7 @@ function lockable_globalTryLock() {
 #   The same process is expected to run the lock AND the unlock, globalUnlock() will work in case a process that called the lock is not active anymore but this
 #   is only a 'security' patch that should actually never be triggered is the program using it has been designed properly
 function lockable_globalUnlock() {
-  local lockfile=
+  local lockfile=""
   lockfile=$(find /tmp/.bashLock -name "$$")
   if [[ "$lockfile" != "" ]]; then
     rm -f "$lockfile"
@@ -76,3 +76,4 @@ function lockable_globalUnlock() {
     fi
   fi
 }
+

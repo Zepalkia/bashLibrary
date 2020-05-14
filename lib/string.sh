@@ -1,4 +1,4 @@
-
+#@PRIORITY: 7
 function string_toUpperCase() {
   if [[ $# -eq 2 ]]; then
     local -n __UPPER_CASE_STR__=$2
@@ -59,6 +59,40 @@ function string_tokenize() {
       __TOKENIZED_STRING__+=("${string%%"$2"*}")
       string=${string#*"$2"}
     done
+  else
+    false
+  fi
+}
+
+# This function extracts a specific substring range from a given string
+# arg0: The main string
+# arg1: The substring starting position (0-indexed)
+# arg2: The size of the substring
+# arg3: The name of the variable that will contain the final result (will be a string)
+# Example:
+#   string_substr "abcdefghijklmnopqrstuvwxyz" 5 10 result
+#   echo "$result"
+function string_substr() {
+  if [[ $# -eq 4 ]]; then
+    local -n __RESULT_SUBSTRING__=$4
+    __RESULT_SUBSTRING__=${1:$2:$3}
+  else
+    false
+  fi
+}
+
+# This function returns the character at a specific position from a given string
+# arg0: The main string
+# arg1: The position (0-indexed) of the char
+# arg2: The name of the variable that will contain the final result (will be a 1-char string)
+# Example:
+#   string_charAt "abcdef" 2 result
+#   echo "Char at position 2: $result"
+function string_charAt() {
+  if [[ $# -eq 3 ]]; then
+    local result=""
+    local -n __CHAR_AT__=$3
+    string_substr $1 $2 1 __CHAR_AT__
   else
     false
   fi
