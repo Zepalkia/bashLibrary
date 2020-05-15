@@ -18,6 +18,12 @@ function system_commandExists() {
   fi
 }
 
+# This function checks if a given package is installed on the system using dpkg
+# arg0: The name of the package to look for
+# arg1: The name of the variable that will contain the answer (boolean)
+# Example:
+#   system_packageInstalled "git" result
+#   [[ $result == true ]] && echo "Git is installed on the system !"
 function system_packageInstalled() {
   if [[ $# -eq 2 ]]; then
     local -n __PACKAGE_IS_INSTALLED__=$2
@@ -26,6 +32,20 @@ function system_packageInstalled() {
     else
       __PACKAGE_IS_INSTALLED__=false
     fi
+  else
+    false
+  fi
+}
+
+# This function retrieves the sorted (by space used) list of all the packages currently installed on the system
+# arg0: The name of the variable that will contain the list (array)
+# Example:
+#   system_listPackages array
+#   echo "The biggest package installed on the system is: ${array[0]}"
+function system_listPackages() {
+  if [[ $# -eq 1 ]]; then
+    local -n __PACKAGE_ARRAY__=$1
+    mapfile -t __PACKAGE_ARRAY__ < <(dpkg-query -W --showformat='${Installed-Size;10}\t${Package}\n' | sort -k1,1nr)
   else
     false
   fi

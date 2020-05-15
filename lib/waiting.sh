@@ -1,3 +1,5 @@
+#@PRIORITY: 8
+
 # This function displays a given message followed by a spinner animation as long as a given process is running
 # arg0: The message to display before the spinner
 # arg1: The pid of the process this function should wait for

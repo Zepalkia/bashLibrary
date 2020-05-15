@@ -1,4 +1,11 @@
 #@PRIORITY: 7
+
+# This function transforms a string by making all its chars in upper case
+# arg0: The string to convert to upper case
+# arg1: The name of the variable that will contain the upper-case string
+# Example:
+#   string_toUpperCase "TeSt" result
+#   echo "Result: $result"
 function string_toUpperCase() {
   if [[ $# -eq 2 ]]; then
     local -n __UPPER_CASE_STR__=$2
@@ -8,6 +15,12 @@ function string_toUpperCase() {
   fi
 }
 
+# This function transforms a string by making all its chars in lower case
+# arg0: The string to convert to lower case
+# arg1: The name of the variable that will contain the upper-case string
+# Example:
+#   string_toLowerCase "TeSt" result
+#   echo "Result: $result"
 function string_toLowerCase() {
   if [[ $# -eq 2 ]]; then
     local -n __LOWER_CASE_STR__=$2
