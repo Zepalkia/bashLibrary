@@ -125,7 +125,15 @@ function ui_echoWindow() {
 }
 
 function ui_confirmWindow() {
-  if [[ $# -eq 5 ]]; then
+  if [[ $# -eq 6 ]]; then
+    local -n __CONFIRMED_VALUE__=$6
+    if [[ $5 == true ]]; then
+      tput smcup
+    fi
+    ui_echoWindow "$1" "$2" "$3" "$4" "YN" __CONFIRMED_VALUE__
+    if [[ $5 == true ]]; then
+      tput rmcup
+    fi
     true
   else
     false
@@ -137,19 +145,23 @@ function ui_confirmWindow() {
 # arg1: The Y position of the top-left corner
 # arg2: The width of the window
 # arg3: The message to display inside the window
-# arg4: A boolean telling if we want (true) or not (false) to display the window into the secondary 
+# arg4: A boolean telling if we want (true) or not (false) to display the window into the secondary screen (will auto-backup the current content of the screen)
 function ui_okWindow() {
   if [[ $# -eq 5 ]]; then
     if [[ $5 == true ]]; then
-      #TODO: Switch if possible
+      tput smcup
     fi
       ui_echoWindow "$1" "$2" "$3" "$4" "OK"
     if [[ $5 == true ]]; then
-      #TODO: Switch back if possible
+      tput rmcup
     fi
   else
     false
   fi
+}
+
+function ui_list() {
+  true
 }
 
 function ui_menu() {

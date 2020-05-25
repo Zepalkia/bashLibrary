@@ -110,3 +110,19 @@ function string_charAt() {
     false
   fi
 }
+
+# This function generates as fixed-size random string containing a given subset of characters
+# arg0: The charset available (You can specify range like 'a-z', be aware that specific characters will have to be escaped, e.g. "\\\\" to have "\")
+# arg1: The length of the final randomized string
+# arg2: The name of the variable that will contain the result (a string)
+# Example:
+#   string_rand "0-9" 100 result
+#   echo "Here's a random 100-digit number: $result"
+function string_rand() {
+  if [[ $# -eq 3 ]]; then
+    local -n __RANDOM_STRING__=$3
+    __RANDOM_STRING__=$(</dev/urandom tr -dc "$1" | head -c "$2")
+  else
+    false
+  fi
+}
