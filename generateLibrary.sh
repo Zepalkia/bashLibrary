@@ -4,18 +4,31 @@
 # this package as a dependency)
 source lib/variables.sh
 source lib/math.sh
-source lib/string.sh
+source lib/string.sh &>/dev/null
 source lib/utilities.sh
 source lib/system.sh
 source lib/lockable.sh
 source lib/ui.sh &>/dev/null
-lockable_globalTryLock 2 result
-if [[ $result == true ]]; then
+if lockable_globalTryLock 2; then
+  comment=true
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -h|--help)
+        echo -e "This script will generates the full 'bashLibrary.sh' script, ready to be sourced with all the required and compatible components in a single file.
+The following options can be used:
+  ${COLOR_FG_WHITE}${FONT_BOLD}--no-comment${FONT_RESET}
+    The bashLibrary.sh file will not contain any comment or documentation"
+        lockable_globalUnlock
+        exit 0;;
+      --no-comment)
+        comment=false;;
+    esac
+    shift
+  done
   version=0.0.1
   library="bashLibrary${version}.sh"
   mkdir ".temp"
   for file in lib/*; do
-    version=0.0.1
     tokens=()
     header=true
     scope=false
@@ -79,6 +92,9 @@ if [[ $result == true ]]; then
         elif [[ $scope == false ]]; then
           # No need to source anything anymore, everything will be put into a single file
           if [[ ! $line =~ source ]]; then
+            if [[ $comment == false ]] && [[ $line == \#* ]]; then
+              continue;
+            fi
             echo -e "$line" >> ".temp/$temporaryName"
           fi
         fi
@@ -88,8 +104,10 @@ if [[ $result == true ]]; then
   done
   IFS=$oldIFS
   echo "Generating the library file..."
-  rm -f "$library"
-  touch "$library"
+  cat > "$library" << EOF
+#!/bin/bash
+BASHLIB_VERSION="$version"
+EOF
   for component in .temp/*; do
     cat "$component" >> "$library"
     rm "$component"

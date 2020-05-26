@@ -1,7 +1,16 @@
 source variables.sh
 source math.sh
+source terminal.sh
 source string.sh
 
+# This function shows formated message to display status to the user
+# arg0: The level of the message
+# arg1: THe message to display
+# The following levels are valid:
+#   'emg' or 'emergency' -> red blinking
+#   'err' or 'error' -> red
+#   'war' or 'warning' -> yellow
+#   'inf' or 'info' -> green
 function ui_showMessage() {
   if [[ $# -eq 2 ]]; then
     case "$1" in
@@ -160,9 +169,39 @@ function ui_okWindow() {
   fi
 }
 
-function ui_list() {
-  true
+# This function prints an horizontal rule from the current cursor position to the last column of the terminal
+# Example:
+#   tput cup 10 0
+#   ui_horizontalRule
+function ui_horizontalRule() {
+  local rule=$(printf "%-$(tput cols)s" "=")
+  echo -e "${COLOR_FG_WHITE}${FONT_BOLD}${rule// /=}${NORMAL}"
 }
+
+# arg0: The array of list entries (strings with prepended '#' for each level of the entry)
+# arg1: String defining the kind of list we want (optional, bullet by default)
+# Example:
+#
+# The element of arg0 should have a '#' at the beginning to define the depth of the following string in the lists, e.g. ## will be depth = 2
+# The following type of list can be given as arg1:
+#  'N' or 'numbered' -> creates a numbered list using roman/arabic numerals
+#  'L' or 'letters' -> creates a alphabetic list using letters
+#  'T' or 'steps' -> creates a list of steps & substeps using extended ascii chars '├' and '└'
+#  'S' or 'symbols' -> creates a bullet list using symbols (default)
+function ui_list() {
+  if [[ $# -ge 1 ]]; then
+    local listArray="$1[@]"
+    local listKind="symbols"
+    local depth=0
+    [[ $# -eq 2 ]] && listKind="$2"
+    for entry in "${listArray[@]}"; do
+      true
+    done
+  else
+    false
+  fi
+}
+
 
 function ui_menu() {
   if [[ $# -eq 2 ]]; then

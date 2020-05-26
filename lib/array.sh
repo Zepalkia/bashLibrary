@@ -1,5 +1,4 @@
-
-# This function search for the min element in an array of integer, returning both the found value and the index inside the array
+# This function search for the max element in an array of integer, returning both the found value and the index inside the array
 # arg0: The NAME of the array variable (not the array values)
 # arg1: The name of the variable that will contain the 'max' value
 # arg2: The name of the variable that will contain the 'argmax' index value
@@ -8,7 +7,7 @@
 #   array_argmax array max argmax
 #   echo "The max value $max of the array is stored at index $argmax"
 # Note:
-#  The index of the first occurence will be returned in case of multiple min values
+#  The index of the first occurence will be returned in case of multiple max values
 function array_argmax() {
   if [[ $# -eq 3 ]] && [[ "$(declare -p "$1")" =~ "declare -a" ]]; then
     local -n __MAXIMUM_VALUE__=$2
@@ -33,6 +32,16 @@ function array_argmax() {
 }
 
 
+# This function search for the min element in an array of integer, returning both the found value and the index inside the array
+# arg0: The NAME of the array variable (not the array values)
+# arg1: The name of the variable that will contain the 'min' value
+# arg2: The name of the variable that will contain the 'argmin' index value
+# Example:
+#   array=(2 5 4 3 0)
+#   array_argmin array min argmin
+#   echo "The min value $min of the array is stored at index $argmin"
+# Note:
+#  The index of the first occurence will be returned in case of multiple min values
 function array_argmin() {
   if [[ $# -eq 3 ]] && [[ "$(declare -p "$1")" =~ "declare -a" ]]; then
     local -n __MINIMUM_VALUE__=$2

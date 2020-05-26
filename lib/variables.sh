@@ -27,7 +27,7 @@ if [[ $(tput colors) == 8 ]]; then
   COLOR_FG_WHITE="$(tput setaf 7)"
   COLOR_BG_WHITE="$(tput setab 7)"
 elif [[ $(tput colors) == 256 ]]; then
-  COLOR_RED="$(tput setaf 256)$(tput setab 256)"
+  COLOR_RESET="$(tput sgr0)"
   COLOR_FG_RED="$(tput setaf 9)"
   COLOR_BG_RED="$(tput setab 9)"
   COLOR_FG_BLINKING_RED="$(tput blink)$COLOR_FG_RED"

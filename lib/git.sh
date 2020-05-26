@@ -2,25 +2,24 @@
 
 # This function checks if a given branch name exists, this 'branch' can be a head, a tag or a remote branch
 # arg0: The name of the branch we're looking for
-# arg1: The name of the variable that will contain the result (boolean)
 # Example:
-#   git_branchExists "master" result
-#   if [[ $result == true ]]; then
+#   if git_branchExists "master"; then
 #     echo "Thankfully, the branch 'master' exists !"
 #   fi
 #@DEPENDS: git
 function git_branchExists() {
-  if [[ $# -eq 2 ]]; then
-    local -n __GIT_BRANCH_EXISTS__=$2
-    __GIT_BRANCH_EXISTS__=true
+  local __GIT_BRANCH_EXISTS__=1
+  if [[ $# -eq 1 ]]; then
+    __GIT_BRANCH_EXISTS__=0
     if ! git show-ref --verify --quiet "refs/heads/$1"; then
       if ! git show-ref --verify --quiet "refs/tags/$1"; then
         if ! git show-ref --verify --quiet "refs/remotes/origin/$1"; then
-          __GIT_BRANCH_EXISTS__=false
+          __GIT_BRANCH_EXISTS__=1
           fi
       fi
     fi
   else
     false
   fi
+  return $__GIT_BRANCH_EXISTS__
 }

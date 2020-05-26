@@ -1,4 +1,5 @@
 #@PRIORITY: 7
+source variables.sh
 
 # This function transforms a string by making all its chars in upper case
 # arg0: The string to convert to upper case
@@ -122,6 +123,76 @@ function string_rand() {
   if [[ $# -eq 3 ]]; then
     local -n __RANDOM_STRING__=$3
     __RANDOM_STRING__=$(</dev/urandom tr -dc "$1" | head -c "$2")
+  else
+    false
+  fi
+}
+
+# This function transforms a 'rich' encoded string and returns it ready to be displayed. You can very easily format strings like that by adding bold, colors, ...
+# in a more readable and easy-to-write way (but of course slower than direct-encoding)
+# arg0: The 'rich' string to decode
+# arg1: The name of the variable that will contain the result (a string ready to be echoed)
+# Example:
+#   str="~rHello~, _this_ ~yis~ a *formated* ~pc~~wo~~rn~~bt~~ge~~cn~~yt~; *_double ~bformated~_*"
+#   string_rich str, result
+#   echo "$result"
+# The following 'encoding' are ready to be used:
+# **...** > bold + white coloring
+# *...* > bold
+# _..._ > underline
+# ~X...~ > color text with 'X' color
+# And you can use multiple of these on the same string.
+function string_rich() {
+  if [[ $# -eq 2 ]]; then
+    local -n __RICH_STRING__=$2
+    local copy="$1"
+    local reg='(.*)(\*\*.+?\*\*)(.*)'
+    while [[ $copy =~ $reg ]]; do
+      copy="${BASH_REMATCH[1]}${FONT_BOLD}${COLOR_FG_WHITE}${BASH_REMATCH[2]//\*\*/}${FONT_RESET}${BASH_REMATCH[3]}"
+    done
+    reg='(.*)(\*.+?\*)(.*)'
+    while [[ $copy =~ $reg ]]; do
+      copy="${BASH_REMATCH[1]}${FONT_BOLD}${BASH_REMATCH[2]//\*/}${FONT_RESET}${BASH_REMATCH[3]}"
+    done
+    reg='(.*)(_.+?_)(.*)'
+    while [[ $copy =~ $reg ]]; do
+      copy="${BASH_REMATCH[1]}${FONT_UNDERLINE}${BASH_REMATCH[2]//_/}${FONT_RESET}${BASH_REMATCH[3]}"
+    done
+    reg='(.*)(~[rgybmcwopa].+?~)(.*)'
+    while [[ $copy =~ $reg ]]; do
+      local color=""
+      local substr=""
+      string_charAt "${BASH_REMATCH[2]}" 1 color
+      string_substr "${BASH_REMATCH[2]}" 2 $((${#BASH_REMATCH[2]} - 3)) substr
+      case "$color" in
+        r) color="${COLOR_FG_RED}";;
+        g) color="${COLOR_FG_GREEN}";;
+        b) color="${COLOR_FG_BLUE}";;
+        y) color="${COLOR_FG_YELLOW}";;
+        m) color="${COLOR_FG_MAGENTA}";;
+        c) color="${COLOR_FG_CYAN}";;
+        w) color="${COLOR_FG_WHITE}";;
+        o) color="${COLOR_FG_ORANGE}";;
+        p) color="${COLOR_FG_PINK}";;
+        a) color="${COLOR_FG_GRAY}";;
+      esac
+      copy="${BASH_REMATCH[1]}$color$substr${COLOR_RESET}${BASH_REMATCH[3]}"
+    done
+    __RICH_STRING__="$copy"
+  else
+    false
+  fi
+}
+
+# This function displays a 'rich' encoded string directly without returning it
+# arg0: The rich string to display
+# Example:
+#   string_echoRich "Hello, I am *very* **VERY** important !"
+function string_echoRich() {
+  if [[ $# -eq 1 ]]; then
+    local richStr=""
+    string_rich "$1" richStr
+    echo "$richStr"
   else
     false
   fi
