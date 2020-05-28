@@ -11,17 +11,22 @@ source lib/lockable.sh
 source lib/ui.sh &>/dev/null
 if lockable_globalTryLock 2; then
   comment=true
+  stopOnFailure=false
   while [[ $# -gt 0 ]]; do
     case "$1" in
       -h|--help)
-        echo -e "This script will generates the full 'bashLibrary.sh' script, ready to be sourced with all the required and compatible components in a single file.
+        string_echoRich "This script will generates the full 'bashLibrary.sh' script, ready to be sourced with all the required and compatible components in a single file.
 The following options can be used:
-  ${COLOR_FG_WHITE}${FONT_BOLD}--no-comment${FONT_RESET}
-    The bashLibrary.sh file will not contain any comment or documentation"
+  **--no-comment**
+    The bashLibrary.sh file will not contain any comment or documentation
+  **--stop**
+  Will stop in case of any failure during shellcheck validation"
         lockable_globalUnlock
         exit 0;;
       --no-comment)
         comment=false;;
+      --stop)
+        stopOnFailure=true;;
     esac
     shift
   done
@@ -33,8 +38,10 @@ The following options can be used:
     header=true
     scope=false
     dependencyCheck=false
+    reason=""
     priority=9
     nLine=0
+    systemVersion=$(bash --version | grep -oE "version [0-9]+\.[0-9]+" | head -1 | awk '{print $2}')
     oldIFS=$IFS
     IFS=''
     temporaryName="$priority$(basename $file)"
@@ -57,8 +64,7 @@ The following options can be used:
             ;;
           DEPENDENCIES)
             for token in ${tokens[@]}; do
-              system_packageInstalled "$token" result
-              if [[ $result == false ]]; then
+              if ! system_packageInstalled "$token"; then
                 dependencyCheck=true
                 echo "-- Package [$token] missing"
               fi
@@ -75,18 +81,24 @@ The following options can be used:
             DEPENDS)
               if [[ $dependencyCheck == true ]]; then
                 for token in ${tokens[@]}; do
-                  system_packageInstalled $token result
-                  if [[ $result == false ]]; then
+                  if ! system_packageInstalled $token; then
                     scope=true
+                    reason="depends on missing library"
                     break
                   fi
                 done
               fi
               ;;
+            VERSION)
+              if [[ "$(bc <<< "${tokens[0]} > $systemVersion")" == "1" ]]; then
+                scope=true
+                reason="requires bash v${tokens[0]} but system uses $systemVersion"
+              fi
+              ;;
           esac
         elif [[ $scope == true ]] && [[ $line == function* ]]; then
           funcName=$(echo $line | grep -oE "[a-z]+_[a-zA-Z]+\(\)")
-          echo "---- Function [$funcName] depends on missing library --> not included !"
+          echo "---- Function [$funcName] $reason --> not included !"
         elif [[ $scope == true ]] && [[ "$line" == "}" ]]; then
           scope=false
         elif [[ $scope == false ]]; then
@@ -101,6 +113,20 @@ The following options can be used:
       fi
       nLine=$((++nLine))
     done < $file
+    shellcheck ".temp/$temporaryName" &>/dev/null
+    if [[ $? -ne 0 ]]; then
+      if [[ $stopOnFailure == true ]]; then
+        string_echoRich "-- Shellcheck *~rfailed~*"
+        shellcheck ".temp/$temporaryName"
+        rm -r ".temp"
+        lockable_globalUnlock
+        exit 0
+      else
+        string_echoRich "-- Shellcheck *~yfailed~*"
+      fi
+    else
+      string_echoRich "-- Shellcheck *~gsuccess~*"
+    fi
   done
   IFS=$oldIFS
   echo "Generating the library file..."
@@ -108,10 +134,25 @@ The following options can be used:
 #!/bin/bash
 BASHLIB_VERSION="$version"
 EOF
+  cat ".temp/9variables.sh" >> "$library"
   for component in .temp/*; do
-    cat "$component" >> "$library"
+    [[ ! $component =~ variables ]] && cat "$component" >> "$library"
     rm "$component"
   done
+  shellcheck "$library" &>/dev/null
+  if [[ $? -ne 0 ]]; then
+    if [[ $stopOnFailure == true ]]; then
+      string_echoRich "-- Shellcheck *~rfailed~*"
+      shellcheck "$library"
+      rm -r ".temp"
+      lockable_globalUnlock
+      exit 0
+    else
+      string_echoRich "-- Shellcheck *~yfailed~*"
+    fi
+  else
+    string_echoRich "-- Shellcheck *~gsuccess~*"
+  fi
   lockable_globalUnlock
   rmdir ".temp"
 else

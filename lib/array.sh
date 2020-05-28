@@ -27,7 +27,7 @@ function array_argmax() {
     done
     __MAXIMUM_VALUE__=$temporaryValue
   else
-    false
+    bashlib_abort "$(caller)" "[&array] [&result0 (max)] [&result1 (argmax)]"
   fi
 }
 
@@ -61,6 +61,7 @@ function array_argmin() {
     done
     __MINIMUM_VALUE__=$temporaryValue
   else
-    false
+    bashlib_abort "$(caller)" "[&array] [&result0 (min)] [&result1 (argmin)]"
   fi
 }
+

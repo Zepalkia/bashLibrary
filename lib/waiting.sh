@@ -7,7 +7,7 @@
 #   (sleep 20)&
 #   waiting_spinner "Waiting for sleep" $!
 # Note:
-#   The cursor final position will be on the same line as the message, \r will start from this line
+#   The cursor final position will be on the same line as the message, cariage return will start from this line
 #   otherwise you'll need to echo a newline to go to the next one and keep it.
 #   This function is BLOCKING as long as the pid exists, by running it in background using & the
 #   spinner animation will follow the cursor everyhere on the screen. If this is the behaviour you
@@ -26,8 +26,7 @@ function waiting_spinner() {
       sleep 0.1
     done
   else
-    bashlib_abort "$(caller)" "$FUNCNAME" "[message] [pid]"
-    false
+    bashlib_abort "$(caller)" "${FUNCNAME[0]}" "[message] [pid]"
   fi
 }
 
@@ -40,15 +39,7 @@ function waiting_cursor() {
   if [[ $# -eq 1 ]]; then
     (waiting_spinner "" "$1") &
   else
-    bashlib_abort "$(caller)" "$FUNCNAME" "[pid]"
+    bashlib_abort "$(caller)" "${FUNCNAME[0]}" "[pid]"
   fi
 }
 
-function waiting_createWaitbar() {
-  true
-  echo "▒"
-}
-
-function waiting_stepWaitbar() {
-  true
-}

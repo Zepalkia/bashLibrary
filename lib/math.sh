@@ -16,7 +16,7 @@ function math_max() {
       __MAXIMUM_VALUE__=$2
     fi
   else
-    bashlib_abort "$(caller)" "$FUNCNAME" "[value 1] [value 2] [&result]"
+    bashlib_abort "$(caller)" "[value 1] [value 2] [&result]"
   fi
 }
 
@@ -36,6 +36,6 @@ function math_min() {
       __MINIMUM_VALUE__=$2
     fi
   else
-    bashlib_abort "$(caller)" "$FUNCNAME" "[value 1] [value 2] [&result]"
+    bashlib_abort "$(caller)" "[value 1] [value 2] [&result]"
   fi
 }

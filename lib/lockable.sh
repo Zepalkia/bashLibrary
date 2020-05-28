@@ -1,3 +1,4 @@
+#@PRIORITY: 0
 #@DEPENDENCIES: inotify-tools
 
 # This function creates a unique global lock that will prevent any other process to call it until lockable_globalUnlock is called by it
@@ -11,7 +12,7 @@
 function lockable_globalLock() {
   local success=false
   while [[ $success == false ]]; do
-    if mkdir "/tmp/.bashLock" &>/dev/null; then
+    if inotifywait "/tmp/.bashLock" &>/dev/null; then
       touch "/tmp/.bashLock/$$"
       success=true
     else
@@ -49,7 +50,7 @@ function lockable_globalTryLock() {
       fi
     done
   else
-    false
+    bashlib_abort "$(caller)" "[attempt time]"
   fi
   return $__TRYLOCK_SUCCESS__
 }
@@ -68,8 +69,8 @@ function lockable_globalUnlock() {
     rm -f "$lockfile"
     rmdir /tmp/.bashLock
   else
-    lockfile=$(basename /tmp/.bashLock/*)
-    if [[ $(ps -p "$lockfile" | wc -l) -le 1 ]]; then
+    lockfile=$(basename_ /tmp/.bashLock/*)
+    if [[ $(ps_ -p "$lockfile" | wc -l) -le 1 ]]; then
       rm -f "/tmp/.bashLock/$lockfile"
       rmdir /tmp/.bashLock
     fi
@@ -121,7 +122,7 @@ function lockable_scopeTryLock() {
     local lockName="/tmp/.lock_${FUNCNAME[1]}"
     timeStart=$(date +%s)
     while [[ $success == false ]] && [[ $(($(date +%s) - timeStart)) -lt 1 ]]; do
-      if mkdir "$lockname" &>/dev/null; then
+      if mkdir "$lockName" &>/dev/null; then
         touch "$lockName/$$"
         success=true
         __SCOPE_TRYLOCK_SUCCESS__=0
@@ -130,7 +131,7 @@ function lockable_scopeTryLock() {
       fi
     done
   else
-    false
+    bashlib_abort "$(caller)" "[attempt time]"
   fi
   return $__SCOPE_TRYLOCK_SUCCESS__
 }

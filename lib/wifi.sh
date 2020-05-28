@@ -15,7 +15,7 @@ function wifi_scan() {
     sleep 5
     mapfile -t __SSIDS_FOUND__ < <(nmcli -t --fields SSID device wifi)
   else
-    false
+    bashlib_abort "$(caller)" "[&result]"
   fi
 }
 
@@ -31,12 +31,12 @@ function wifi_macAddress() {
     local interface="";
     local -n __WIFI_MAC__=$1
     interface=$(nmcli device status | grep wifi | awk '{print $1}')
-    __WIFI_MAC__=$(nmcli device show $interface | grep HWADDR | awk '{print $2}')
+    __WIFI_MAC__=$(nmcli device show "$interface" | grep HWADDR | awk '{print $2}')
   elif [[ $# -eq 2 ]]; then
     local -n __WIF_MAC__=$2
     __WIFI_MAC=$(nmcli device show "$1" | grep HWADDR | awk '{print $2}')
   else
-    false
+    bashlib_abort "$(caller)" "{wifi interface} [&result]"
   fi
 }
 
@@ -47,13 +47,15 @@ function wifi_macAddress() {
 # arg3: The ending IP range (e.g. 192.168.1.150)
 # arg4: The static IP of the interface that will provide IP addresses (e.g. 192.168.5.1)
 # Example:
-#   TODO
+#   sudo -s
+#   wifi_setupDHCP 60.0.0.0 255.255.255.0 60.0.0.100 60.0.0.200 60.0.0.1
 #@DEPENDS: isc-dhcp-server
 function wifi_setupDHCP() {
-  if [[ $# -eq 4 ]] && [[ -w /etc/dhcp/dhcpd.conf ]]; then
-    local bcastIP=${1//0/255}
-    service isc-dhcp-server stop &>/dev/null
-    cat > /etc/dhcp/dhcpd.conf << EOF
+  if [[ $# -eq 5 ]]; then
+    if [[ -w /etc/dhcp/dhcpd.conf ]]; then
+      local bcastIP=${1//0/255}
+      service isc-dhcp-server stop &>/dev/null
+      cat > /etc/dhcp/dhcpd.conf << EOF
 ddns-update-style none;
 default-lease-time 600;
 max-lease-time 7200;
@@ -67,9 +69,11 @@ subnet $1 netmask $2 {
   option domain-name-servers $5 8.8.8.8;
 }
 EOF
-    service isc-dhcp-server start &>/dev/null
+    else
+      bashlib_abort "$(caller)" "must be launched as root"
+    fi
   else
-    false
+    bashlib_abort "$(caller)" "[signature ip] [netmask] [starting range] [ending range] [static ip of the provider]"
   fi
 }
 
@@ -88,26 +92,30 @@ EOF
 #@DEPENDS: network-manager, isc-dhcp-server
 function wifi_createHotspot() {
   if [[ $# -eq 4 ]]; then
-    local interface=$1
-    local SSID=$2
-    local password=$3
-    local ip=$4
-    nmcli radio wifi on &>/dev/null
-    ifconfig "$interface" up &>/dev/null
-    if [[ "$password" == "" ]]; then
-      nmcli con add con-name "hotspot" type wifi ifname "$interface" ssid "$SSID" -- 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared ipv4.method manual ipv4.address "$ip"/24 &>/dev/null
+    if [[ $EUID -eq 0 ]]; then
+      local interface=$1
+      local SSID=$2
+      local password=$3
+      local hotspotIp=$4
+      nmcli radio wifi on &>/dev/null
+      ifconfig "$interface" up &>/dev/null
+      if [[ "$password" == "" ]]; then
+        nmcli con add con-name "hotspot" type wifi ifname "$interface" ssid "$SSID" -- 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared ipv4.method manual ipv4.address "$hotspotIp"/24 &>/dev/null
+      else
+        nmcli con add con-name "hotspot" type wifi ifname "$interface" ssid "$SSID" -- wifi-sec.key-mgmt wpa-psk 802-11-wireless.mode ap wifi-sec.psk "$password" 802-11-wireless.band bg ipv4.method shared ipv4.method manual ipv4.address "$hotspotIp"/24 &>/dev/null
+      fi
+      if nmcli con up "hotspot" &>/dev/null; then
+        dhclient -r "$interface"
+        pkill -f "dhclient $interface"
+        service isc-dhcp-server stop &>/dev/null
+        ifconfig "$interface" "$hotspotIp" &>/dev/null
+        service isc-dhcp-server start &>/dev/null
+      fi
     else
-      nmcli con add con-name "hotspot" type wifi ifname "$interface" ssid "$SSID" -- wifi-sec.key-mgmt wpa-psk 802-11-wireless.mode ap wifi-sec.psk "$password" 802-11-wireless.band bg ipv4.method shared ipv4.method manual ipv4.address "$ip"/24 &>/dev/null
-    fi
-    if nmcli con up "hotspot" &>/dev/null; then
-      dhclient -r "$interface"
-      pkill -f "dhclient $interface"
-      service isc-dhcp-server stop &>/dev/null
-      ifconfig "$interface" "$ip" &>/dev/null
-      service isc-dhcp-server start &>/dev/null
+      bashlib_abort "$(caller)" "must be launched as root"
     fi
   else
-    false
+    bashlib_abort "$(caller)" "[wifi interface] [hotspot name] [password (can be empty)] [ip]"
   fi
 }
 

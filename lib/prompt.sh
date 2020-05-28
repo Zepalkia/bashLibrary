@@ -33,7 +33,7 @@ function prompt_readWithDefault() {
     fi
     tput cvvis
   else
-    false
+    bashlib_abort "$(caller)" "[default value] [&result]"
   fi
 }
 
@@ -57,7 +57,7 @@ function prompt_confirmation() {
     echo -e "$1"
     prompt_readWithDefault "$2" input
   else
-    false
+    bashlib_abort "$(caller)" "[message] {default answer} [&result]"
   fi
   if [[ $valid == true ]]; then
     while true; do

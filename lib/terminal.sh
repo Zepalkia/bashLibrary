@@ -20,7 +20,7 @@ function terminal_getCursorLine() {
     test "$value" -eq "$value" || value=0
     __CURSOR_LINE__=$((value - 2))
   else
-    false
+    bashlib_abort "$(caller)" "[&result]"
   fi
 }
 
@@ -43,21 +43,22 @@ function terminal_mouseClick() {
     local tokens=()
     stty -echo
     echo -en "\e[?1000;1006;1015h"
-    read -rsn 11 click
+    read -rsn 18 click
     echo -en "\e[?1000;1006;1015l"
     string_tokenize "$click" ";" tokens
     if [[ "${#tokens[@]}" -gt 2 ]]; then
       string_substr "${tokens[2]}" 0 2 result
-      result=${result/M/}
+      result=${result//[mM]/}
     else
-      result=${tokens[2]/M/}
+      result=${tokens[2]//[mM]/}
     fi
     __BUTTON_CLICKED__=${tokens[0]}
-    __CLICK_X_POSITION__=$((${tokens[1]} - 1))
+    __CLICK_X_POSITION__=$((tokens[1] - 1))
     __CLICK_Y_POSITION__=$((result - 1))
+    read -rt 0.1
     stty echo
   else
-    false
+    bashlib_abort "$(caller)" "[&result0 (button)] [&result1 (X)] [&result2 (Y)]"
   fi
 }
 
@@ -73,8 +74,9 @@ function terminal_mouseClick() {
 function terminal_readArrowKey() {
   if [[ $# -eq 1 ]]; then
     local -n __READ_ARROW__=$1
-    local escape=$(printf "\u1b")
+    local escape=""
     local input=""
+    escape=$(printf "\u1b")
     while true; do
       read -rsn 1 input
       if [[ "$input" == "$escape" ]]; then
@@ -100,6 +102,6 @@ function terminal_readArrowKey() {
       fi
     done
   else
-    false
+    bashlib_abort "$(caller)" "[&result]"
   fi
 }

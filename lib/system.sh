@@ -12,7 +12,7 @@ function system_commandExists() {
       __COMMAND_DOES_EXISTS__=0
     fi
   else
-    false
+    bashlib_abort "$(caller)" "[command]"
   fi
   return $__COMMAND_DOES_EXISTS__
 }
@@ -30,7 +30,7 @@ function system_packageInstalled() {
       __PACKAGE_IS_INSTALLED__=0
     fi
   else
-    false
+    bashlib_abort "$(caller)" "[package]"
   fi
   return $__PACKAGE_IS_INSTALLED__
 }
@@ -45,6 +45,6 @@ function system_listPackages() {
     local -n __PACKAGE_ARRAY__=$1
     mapfile -t __PACKAGE_ARRAY__ < <(dpkg-query -W --showformat='${Installed-Size;10}\t${Package}\n' | sort -k1,1nr)
   else
-    false
+    bashlib_abort "$(caller)" "[&result]"
   fi
 }

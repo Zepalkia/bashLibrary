@@ -12,7 +12,7 @@ function string_toUpperCase() {
     local -n __UPPER_CASE_STR__=$2
     __UPPER_CASE_STR__=$(echo "$1" | tr '[:lower:]' '[:upper:]')
   else
-    false
+    bashlib_abort "$(caller)" "[string to convert] [&result]"
   fi
 }
 
@@ -27,7 +27,7 @@ function string_toLowerCase() {
     local -n __LOWER_CASE_STR__=$2
     __LOWER_CASE_STR__=$(echo "$1" | tr '[:upper:]' '[:lower:]')
   else
-    false
+    bashlib_abort "$(caller)" "[string to convert] [&result]"
   fi
 }
 
@@ -53,7 +53,7 @@ function string_trim() {
       *) false;;
     esac
   else
-    false
+    bashlib_abort "$(caller)" "[string to trim] [leading/trailing/all] [&result]"
   fi
 }
 
@@ -74,7 +74,7 @@ function string_tokenize() {
       string=${string#*"$2"}
     done
   else
-    false
+    bashlib_abort "$(caller)" "[string to tokenize] [delimiter] [&result]"
   fi
 }
 
@@ -91,7 +91,7 @@ function string_substr() {
     local -n __RESULT_SUBSTRING__=$4
     __RESULT_SUBSTRING__=${1:$2:$3}
   else
-    false
+    bashlib_abort "$(caller)" "[string] [substring starting position] [substring size] [&result]"
   fi
 }
 
@@ -106,9 +106,9 @@ function string_charAt() {
   if [[ $# -eq 3 ]]; then
     local result=""
     local -n __CHAR_AT__=$3
-    string_substr $1 $2 1 __CHAR_AT__
+    string_substr "$1" "$2" 1 __CHAR_AT__
   else
-    false
+    bashlib_abort "$(caller)" "[string] [position] [&result]"
   fi
 }
 
@@ -124,7 +124,7 @@ function string_rand() {
     local -n __RANDOM_STRING__=$3
     __RANDOM_STRING__=$(</dev/urandom tr -dc "$1" | head -c "$2")
   else
-    false
+    bashlib_abort "$(caller)" "[charset] [length] [&result]"
   fi
 }
 
@@ -180,7 +180,7 @@ function string_rich() {
     done
     __RICH_STRING__="$copy"
   else
-    false
+    bashlib_abort "$(caller)" "[string] [&result]"
   fi
 }
 
@@ -194,6 +194,6 @@ function string_echoRich() {
     string_rich "$1" richStr
     echo "$richStr"
   else
-    false
+    bashlib_abort "$(caller)" "[string]"
   fi
 }

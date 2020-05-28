@@ -38,9 +38,10 @@ function signals_init() {
   fi
 }
 
+# This function removes all catch for the handled signals to go back to the 'regular' behaviour of the system
 function signals_reset() {
   local signals=(SIGINT SIGHUP SIGWINCH)
-  for signal in ${signals[@]}; do
-    trap - $signal
+  for signal in "${signals[@]}"; do
+    trap - "$signal"
   done
 }

@@ -20,7 +20,7 @@ function ui_showMessage() {
       inf|info) echo -e "[${COLOR_FG_GREEN}Info${COLOR_RESET}] $2";;
     esac
   else
-    false
+    bashlib_abort "$(caller)" "[level] [message]"
   fi
 }
 
@@ -51,12 +51,14 @@ function ui_echoWindow() {
     local line=1
     local box=""
     local xRight=0
+    local result=""
+    local leftovers=""
     math_min $(($(tput cols) - xOrigin - 3)) "$3" width
     xRight=$((xOrigin + width - 1 - width % 2))
     box=$(printf "%-$((width / 2 - 1))s" " ")
-    tput cup $yOrigin $xOrigin
+    tput cup "$yOrigin" "$xOrigin"
     echo "+${box// /=~}+"
-    tput cup $((yOrigin + line)) $xOrigin
+    tput cup $((yOrigin + line)) "$xOrigin"
     for word in $message; do
       if [[ $nChar -eq 0 ]]; then
         str="| $word ";
@@ -70,17 +72,17 @@ function ui_echoWindow() {
         string_substr "$str" 0 $((width - 2 - ${#str} - nChar)) result
         string_substr "$str" $((width -2 - ${#str} - nChar)) ${#str} leftovers
         echo -n "$result"
-        tput cup $((yOrigin + line)) $xRight
+        tput cup $((yOrigin + line)) "$xRight"
         echo -n "|"
         line=$((line + 1))
-        tput cup $((yOrigin + line)) $xOrigin
+        tput cup $((yOrigin + line)) "$xOrigin"
         echo -n "| $leftovers"
         nChar=$((3 + ${#leftovers}))
       fi
     done
-    tput cup $((yOrigin + line)) $xRight
+    tput cup $((yOrigin + line)) "$xRight"
     echo -n "|"
-    tput cup $((yOrigin + line + 1)) $xOrigin
+    tput cup $((yOrigin + line + 1)) "$xOrigin"
     case "$localClear" in
       OK|YN)
         echo -n "| "
@@ -93,12 +95,12 @@ function ui_echoWindow() {
         fi
         tput cup $((yOrigin + line + 1)) $xRight
         echo -n "|"
-        tput cup $((yOrigin + line + 2)) $xOrigin
+        tput cup $((yOrigin + line + 2)) "$xOrigin"
         echo "+${box// /=~}+"
         if [[ "$localClear" == "OK" ]]; then
-          read -n 1
+          read -rn 1
           for((l=0; l < $((line + 3)); ++l)); do
-            tput cup $((yOrigin + l)) $xOrigin
+            tput cup $((yOrigin + l)) "$xOrigin"
             echo " ${box// /  } "
           done
         else
@@ -117,22 +119,29 @@ function ui_echoWindow() {
             fi
           done
           for((l=0; l < $((line + 3)); ++l)); do
-            tput cup $((yOrigin + l)) $xOrigin
+            tput cup $((yOrigin + l)) "$xOrigin"
             echo " ${box// /  } "
           done
         fi
         ;;
       *)
-        tput cup $((yOrigin + line + 1)) $xOrigin
+        tput cup $((yOrigin + line + 1)) "$xOrigin"
         echo "+${box// /=~}+"
         ;;
     esac
     tput rc
   else
-    false
+    bashlib_abort "$(caller)" "[top-left X] [top-left Y] [width] [message] [kind of window] {&result}"
   fi
 }
 
+# This function displays a window with a 'yes/no' interface to the user.
+# arg0: The X top-left corner of the window
+# arg1: The Y top-left corner of the window
+# arg2: The width of the window
+# arg3: The message to dislay inside the window
+# arg4: A boolean telling if we want to use the secondary screen to display only the window without breaking the current terminal content or not
+# arg5: The name of the variables that will contain the answer of the user
 function ui_confirmWindow() {
   if [[ $# -eq 6 ]]; then
     local -n __CONFIRMED_VALUE__=$6
@@ -143,9 +152,8 @@ function ui_confirmWindow() {
     if [[ $5 == true ]]; then
       tput rmcup
     fi
-    true
   else
-    false
+    bashlib_abort "$(caller)" "[top-left X] [top-left Y] [width] [message] [backup screen (T/F)] [&result]"
   fi
 }
 
@@ -165,6 +173,7 @@ function ui_okWindow() {
       tput rmcup
     fi
   else
+    bashlib_abort "$(caller)" "[top-left X] [top-left Y] [widt] [message] [backup screen (T/F)]"
     false
   fi
 }
@@ -174,40 +183,7 @@ function ui_okWindow() {
 #   tput cup 10 0
 #   ui_horizontalRule
 function ui_horizontalRule() {
-  local rule=$(printf "%-$(tput cols)s" "=")
+  local rule=""
+  rule=$(printf "%-$(tput cols)s" "=")
   echo -e "${COLOR_FG_WHITE}${FONT_BOLD}${rule// /=}${NORMAL}"
 }
-
-# arg0: The array of list entries (strings with prepended '#' for each level of the entry)
-# arg1: String defining the kind of list we want (optional, bullet by default)
-# Example:
-#
-# The element of arg0 should have a '#' at the beginning to define the depth of the following string in the lists, e.g. ## will be depth = 2
-# The following type of list can be given as arg1:
-#  'N' or 'numbered' -> creates a numbered list using roman/arabic numerals
-#  'L' or 'letters' -> creates a alphabetic list using letters
-#  'T' or 'steps' -> creates a list of steps & substeps using extended ascii chars '├' and '└'
-#  'S' or 'symbols' -> creates a bullet list using symbols (default)
-function ui_list() {
-  if [[ $# -ge 1 ]]; then
-    local listArray="$1[@]"
-    local listKind="symbols"
-    local depth=0
-    [[ $# -eq 2 ]] && listKind="$2"
-    for entry in "${listArray[@]}"; do
-      true
-    done
-  else
-    false
-  fi
-}
-
-
-function ui_menu() {
-  if [[ $# -eq 2 ]]; then
-    true
-  else
-    false
-  fi
-}
-
