@@ -63,7 +63,8 @@ function terminal_mouseClick() {
 }
 
 # This function awaits for the user to use one of the 4 directonal arrow-keys
-# arg0: The name of the variable that will contain which key have been pressed (readable string)
+# arg0: (optional) A boolean telling if we want to read any key (true) or only the arrow keys (false, default)
+# arg1: The name of the variable that will contain which key have been pressed (readable string)
 # Example:
 #   terminal_readArrowKey arrow
 #   echo "The user pressed the direction: $arrow"
@@ -72,8 +73,13 @@ function terminal_mouseClick() {
 # to understand and does the job done just fine in most of the situations.
 # 'space' or 'enter' key are exiting this function with 'NONE' as a return value.
 function terminal_readArrowKey() {
-  if [[ $# -eq 1 ]]; then
-    local -n __READ_ARROW__=$1
+  if [[ $# -ge 1 ]]; then
+    if [[ $# -eq 1 ]]; then
+      local -n __READ_ARROW__=$1
+    else
+      local readAll=$1
+      local -n __READ_ARROW__=$2
+    fi
     local escape=""
     local input=""
     escape=$(printf "\u1b")
@@ -99,9 +105,66 @@ function terminal_readArrowKey() {
       elif [[ "$input" == "" ]]; then
         __READ_ARROW__="NONE"
         break
+      elif [[ $readAll == true ]]; then
+        __READ_ARROW__=$input
+        break
       fi
     done
   else
     bashlib_abort "$(caller)" "[&result]"
+  fi
+}
+
+# This function is able to handle multiple kind of event at once, it awaits for any user interaction and returns which interaction and the result
+# arg0: The name of the variable that will contain the value of the event (depends on the event, see notes)
+# arg1: The name of the variable that will contain the type of the event (see notes)
+# Example:
+#   terminal_readEvent value type
+#   echo "An event of type [$type] has been catched, result: [$value]"
+# Note:
+# This function will handle the following kind of events:
+# - mouse:
+#     Any mouse click on the terminal, the 'value' will contain the button click and the <x,y> position of the click in the format 'button;x;y'
+# - arrow:
+#     An arrow key has been used, the 'value' will contain the direction (UP, DOWN, LEFT or RIGHT)
+# - validation:
+#     The 'enter' or 'space' key is pressed, the 'value' will not contain anything
+# - key:
+#     Any other keyboard key has been pressed, the 'value' will contain the char that has been entered
+function terminal_readEvent() {
+  if [[ $# -eq 2 ]]; then
+    local escape=""
+    local input=""
+    local -n __READ_EVENT__=$1
+    local -n __TYPE_EVENT__=$2
+    escape=$(printf "\u1b")
+    stty -echo
+    echo -en "\e[?1000;1006;1015h"
+    read -rsn 1 input
+    echo -en "\e[?1000;1006;1015l"
+    stty echo
+    if [[ "$input" == "$escape" ]]; then
+      read -rsn 2 input
+      __TYPE_EVENT__="arrow"
+      case "$input" in
+        "[A") __READ_EVENT__="UP";;
+        "[B") __READ_EVENT__="DOWN";;
+        "[D") __READ_EVENT__="LEFT";;
+        "[C") __READ_EVENT__="RIGHT";;
+        "[<")
+          __TYPE_EVENT__="mouse"
+          read -rst 0.1 input
+          string_tokenize "$input" ";" input
+          __READ_EVENT__="${input[0]};${input[1]};${input[2]//M/}"
+          ;;
+      esac
+    elif [[ "$input" == "" ]]; then
+      __TYPE_EVENT__="validation"
+    else
+      __READ_EVENT__="$input"
+      __TYPE_EVENT__="key"
+    fi
+  else
+    false
   fi
 }

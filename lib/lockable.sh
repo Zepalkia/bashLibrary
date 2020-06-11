@@ -158,3 +158,60 @@ function lockable_scopeUnlock() {
     fi
   fi
 }
+
+function lockable_namedLock() {
+  if [[ $# -eq 1 ]]; then
+    local success=false
+    while [[ $success == false ]]; do
+      if inotifywait "/tmp/$1" &>/dev/null; then
+        touch "/tmp/$1/$$"
+        success=true
+      else
+        inotifywait -e delete --quiet "/tmp/$1"
+      fi
+    done
+  else
+    bashlib_abort "$(caller)" "[lock name]"
+  fi
+}
+
+function lockable_namedTryLock() {
+  local __TRYLOCK_SUCCESS__=1
+  if [[ $# -eq 2 ]]; then
+    local timeStart=0
+    local success=false
+    timeStart=$(date +%s)
+    # check $1 is an int !
+    while [[ $success == false ]] && [[ $(($(date +%s) - timeStart)) -lt $2 ]]; do
+      if mkdir "/tmp/$1" &>/dev/null; then
+        touch "/tmp/$1/$$"
+        success=true
+        __TRYLOCK_SUCCESS__=0
+      else
+        sleep .5
+      fi
+    done
+  else
+    bashlib_abort "$(caller)" "[lock name] [attempt time]"
+  fi
+  return $__TRYLOCK_SUCCESS__
+}
+
+function lockable_namedUnlock() {
+  if [[ $# -eq 1 ]]; then
+    local lockfile=""
+    lockfile=$(find "/tmp/$1" -name "$$")
+    if [[ "$lockfile" != "" ]]; then
+      rm -f "$lockfile"
+      rmdir "/tmp/$1"
+    else
+      lockfile=$(basename /tmp/"$1"/*)
+      if [[ $(ps -p "$lockfile" | wc -l) -le 1 ]]; then
+        rm -f "/tmp/$1/$lockfile"
+        rmdir "/tmp/$1"
+      fi
+    fi
+  else
+    bashlib_abort "$(caller)" "[lock name]"
+  fi
+}

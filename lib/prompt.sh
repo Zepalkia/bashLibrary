@@ -44,6 +44,7 @@ function prompt_readWithDefault() {
 # Example:
 #   prompt_confirmation "Do you agree with me ? [y/n] " result
 #   [[ $result == true ]] && echo "Thank you !" || echo "Too bad :("
+# See also 'ui_confirmWindow'
 function prompt_confirmation() {
   local valid=false
   local input=""

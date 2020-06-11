@@ -54,7 +54,9 @@ FONT_COLOR_REVERSE=$(tput rev)
 FONT_BLINK=$(tput blink)
 FONT_INVISIBLE=$(tput invis)
 FONT_RESET=$(tput sgr0)
-
+# This function stops the script execution and display an error to the user, used internally by the library to manage the wrong usage of functions
+# arg0: The $(caller) result as a string
+# arg1: The message to display to the user
 function bashlib_abort() {
   local line=""
   local component=""
@@ -65,5 +67,40 @@ function bashlib_abort() {
     exit 1
   else
     echo -e "[${COLOR_FG_RED}Error${COLOR_RESET}] Bad usage of ${FUNCNAME[1]}: $2 (called by an interactive terminal)"
+  fi
+}
+# This function allows to declare some error code that will trigger a unique user-defined 'quit' function. Such function named '__EXIT__' is expected to be
+# declared BEFORE calling this function and will receive as an argument the error code given when declaring it
+# The purpose is only to be able to make bash scripts more readable and to handle in a single place the exit  alues and behaviour by simply declaring error name
+# that will then become "dynamic" functions
+# arg0: The name of the error
+# arg1: The error code
+# arg2: (optional) The error message that will be sent to the '__EXIT__' function
+# Example:
+#   function __EXIT__() { echo "I leave now with error code '$1' (called from ${FUNCNAME[2]})"; exit $1; }
+#   bashlib_declareErrno "EXIT_FAILURE" "1"
+#   bashlib_declareErrno "EXIT_SUCCESS" "0"
+#   bashlib_declareErrno "EXIT_WRONG_ARGUMENT" "2" "wrong argument given"
+#   EXIT_SUCCESS
+# Note:
+# In your __EXIT__ function, in addition to the errno ($1) and optional error message ($2) you can easily retrieve the name of the function that triggered it
+# which is stored inside ${FUNCNAME[2]}
+function bashlib_declareErrno() {
+  if [[ $# -ge 2 ]]; then
+    if [[ "$(type -t __EXIT__)" == "function" ]]; then
+      local msg=""
+      if [[ $# -eq 3 ]]; then
+        msg="$3"
+      fi
+      source /dev/stdin << EOF
+function $1() {
+  __EXIT__ $2 "$msg"
+}
+EOF
+    else
+      bashlib_abort "$(caller)" "a generic function __EXIT__ needs to be defined"
+    fi
+  else
+    bashlib_abort "$(caller)" "[error name] [error code] {error message}"
   fi
 }

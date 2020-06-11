@@ -10,7 +10,7 @@ source variables.sh
 function string_toUpperCase() {
   if [[ $# -eq 2 ]]; then
     local -n __UPPER_CASE_STR__=$2
-    __UPPER_CASE_STR__=$(echo "$1" | tr '[:lower:]' '[:upper:]')
+    __UPPER_CASE_STR__=${1^^}
   else
     bashlib_abort "$(caller)" "[string to convert] [&result]"
   fi
@@ -25,7 +25,7 @@ function string_toUpperCase() {
 function string_toLowerCase() {
   if [[ $# -eq 2 ]]; then
     local -n __LOWER_CASE_STR__=$2
-    __LOWER_CASE_STR__=$(echo "$1" | tr '[:upper:]' '[:lower:]')
+    __LOWER_CASE_STR__=${1,,}
   else
     bashlib_abort "$(caller)" "[string to convert] [&result]"
   fi
@@ -140,7 +140,9 @@ function string_rand() {
 # **...** > bold + white coloring
 # *...* > bold
 # _..._ > underline
-# ~X...~ > color text with 'X' color
+# ++...++ > blink
+# ~X...~ > color text with 'X' color, if lower case the font is colored otherwise the background is colored
+# <cr> > will add a Cariage Return (new line)
 # And you can use multiple of these on the same string.
 function string_rich() {
   if [[ $# -eq 2 ]]; then
@@ -158,7 +160,16 @@ function string_rich() {
     while [[ $copy =~ $reg ]]; do
       copy="${BASH_REMATCH[1]}${FONT_UNDERLINE}${BASH_REMATCH[2]//_/}${FONT_RESET}${BASH_REMATCH[3]}"
     done
-    reg='(.*)(~[rgybmcwopa].+?~)(.*)'
+    reg='(.*)(\+\+.+?\+\+)(.*)'
+    while [[ $copy =~ $reg ]]; do
+      copy="${BASH_REMATCH[1]}${FONT_BLINK}${BASH_REMATCH[2]//\+/}${FONT_RESET}${BASH_REMATCH[3]}"
+    done
+    reg='(.*)(<cr>)(.*)'
+    while [[ $copy =~ $reg ]]; do
+      copy="${BASH_REMATCH[1]}
+${BASH_REMATCH[3]}"
+    done
+    reg='(.*)(~[rgybmcwopaRGYBMCWOPA].+?~)(.*)'
     while [[ $copy =~ $reg ]]; do
       local color=""
       local substr=""
@@ -166,15 +177,25 @@ function string_rich() {
       string_substr "${BASH_REMATCH[2]}" 2 $((${#BASH_REMATCH[2]} - 3)) substr
       case "$color" in
         r) color="${COLOR_FG_RED}";;
+        R) color="${COLOR_BG_RED}";;
         g) color="${COLOR_FG_GREEN}";;
+        G) color="${COLOR_BG_GREEN}";;
         b) color="${COLOR_FG_BLUE}";;
+        B) color="${COLOR_BG_BLUE}";;
         y) color="${COLOR_FG_YELLOW}";;
+        Y) color="${COLOR_BG_YELLOW}";;
         m) color="${COLOR_FG_MAGENTA}";;
+        M) color="${COLOR_BG_MAGENTA}";;
         c) color="${COLOR_FG_CYAN}";;
+        C) color="${COLOR_BG_CYAN}";;
         w) color="${COLOR_FG_WHITE}";;
+        W) color="${COLOR_BG_WHITE}";;
         o) color="${COLOR_FG_ORANGE}";;
+        O) color="${COLOR_BG_ORANGE}";;
         p) color="${COLOR_FG_PINK}";;
+        P) color="${COLOR_BG_PINK}";;
         a) color="${COLOR_FG_GRAY}";;
+        A) color="${COLOR_BG_GRAY}";;
       esac
       copy="${BASH_REMATCH[1]}$color$substr${COLOR_RESET}${BASH_REMATCH[3]}"
     done
@@ -195,5 +216,40 @@ function string_echoRich() {
     echo "$richStr"
   else
     bashlib_abort "$(caller)" "[string]"
+  fi
+}
+
+# This function displays (as a 'rich' encoded string if required) a given string to a specific position before putting back the cursor at the initial position
+# arg0: The (rich or not) string to display
+# arg1: The X coordinate
+# arg2: The Y coordiante
+# arg3: A boolean (optional) saying if we want (true) or not (false) clear the entire line of the terminal after the string
+function string_echoPosition() {
+  if [[ $# -ge 3 ]]; then
+    local richStr=""
+    tput sc
+    tput cup "$3" "$2"
+    string_rich "$1" richStr
+    echo -n "$richStr"
+    if [[ $# -eq 4 ]] && [[ $4 == true ]]; then
+      tput el
+    fi
+    tput rc
+  else
+    bashlib_abort "$(caller)" "[string] [X coordinate] [Y coordinate] {line clear wanted [T/F]}"
+  fi
+}
+
+function string_remove() {
+  if [[ $# -eq 3 ]]; then
+    local string="$1"
+    local substrToRemove="$2[@]"
+    local -n __CLEANED_STRING__=$3
+    for substr in ${!substrToRemove}; do
+      string=${string//$substr/}
+    done
+    __CLEANED_STRING__=$string
+  else
+    bashlib_abort "$(caller)" "[string] [&array of substrings] [&result]"
   fi
 }

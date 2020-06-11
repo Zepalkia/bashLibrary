@@ -11,7 +11,9 @@ source lib/lockable.sh
 source lib/ui.sh &>/dev/null
 if lockable_globalTryLock 2; then
   comment=true
+  smart=()
   stopOnFailure=false
+  functions=$(grep -oE "function [a-z]+_[a-zA-Z]+" lib/* | awk '{print $2}')
   while [[ $# -gt 0 ]]; do
     case "$1" in
       -h|--help)
@@ -20,13 +22,28 @@ The following options can be used:
   **--no-comment**
     The bashLibrary.sh file will not contain any comment or documentation
   **--stop**
-  Will stop in case of any failure during shellcheck validation"
+  Will stop in case of any failure during shellcheck validation
+  **--smart**
+  Will generate a subset of the full library containing only required functions and without comments or additional content"
         lockable_globalUnlock
         exit 0;;
       --no-comment)
         comment=false;;
       --stop)
         stopOnFailure=true;;
+      --smart)
+        shift
+        while [[ $# -gt 0 ]] && [[ $1 != -* ]]; do
+          smart+=($1)
+          shift
+        done
+        if [[ ${#smart[@]} -eq 0 ]]; then
+          string_echoRich "*~rError:~* --smart option expects files to scan that will use the library"
+          exit 0
+          lockable_globalUnlock
+        fi
+        comment=false
+        ;;
     esac
     shift
   done
@@ -103,20 +120,28 @@ The following options can be used:
           scope=false
         elif [[ $scope == false ]]; then
           # No need to source anything anymore, everything will be put into a single file
-          if [[ ! $line =~ source ]]; then
+          if [[ ! $line =~ source ]] || [[ "$file" == "lib/variables.sh" ]]; then
             if [[ $comment == false ]] && [[ $line == \#* ]]; then
               continue;
             fi
-            echo -e "$line" >> ".temp/$temporaryName"
+            if [[ ${#smart[@]} -gt 0 ]] && [[ $line == function* ]]; then
+              funcName=$(echo $line | grep -oE "[a-z]+_[a-zA-Z]+")
+              if [[ $(grep "$funcName" ${smart[@]} | wc -l) -eq 0 ]]; then
+                scope=true
+              fi
+            fi
+            [[ $scope == false ]] && [[ ${#line} -gt 0 ]] && echo -e "$line" >> ".temp/$temporaryName"
           fi
         fi
       fi
       nLine=$((++nLine))
     done < $file
-    shellcheck ".temp/$temporaryName" &>/dev/null
+    sed -i '1i#!/bin/bash' ".temp/$temporaryName"
+    shellcheck ".temp/$temporaryName" &>/dev/null || true
     if [[ $? -ne 0 ]]; then
       if [[ $stopOnFailure == true ]]; then
         string_echoRich "-- Shellcheck *~rfailed~*"
+        ls ".temp/"
         shellcheck ".temp/$temporaryName"
         rm -r ".temp"
         lockable_globalUnlock
@@ -127,6 +152,7 @@ The following options can be used:
     else
       string_echoRich "-- Shellcheck *~gsuccess~*"
     fi
+    sed -i '1d' ".temp/$temporaryName"
   done
   IFS=$oldIFS
   echo "Generating the library file..."

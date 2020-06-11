@@ -1,5 +1,20 @@
 #@DEPENDENCIES: bc
 
+# This function safely changes directory and stops the full execution in case it failed
+# arg0: The path of the directory we want to use
+# Example:
+#   utilities_safeCD "/tmp/mypath"
+#   echo "I safely arrived into $PWD !"
+function utilities_safeCD() {
+  if [[ $# -eq 1 ]]; then
+    if ! cd "$1"; then
+      bashlib_abort "$(caller)" "the folder $1 cannot be reached from the current one ($PWD)"
+    fi
+  else
+    bashlib_abort "$(caller)" "[path]"
+  fi
+}
+
 # This function checks if a given ipv4 is following the proper format and is valid or not
 # arg0: The ip to validate
 # Example:
@@ -48,4 +63,3 @@ function utilities_bytesToReadable() {
     bashlib_abort "$(caller)" "[bytes] [&result]"
   fi
 }
-

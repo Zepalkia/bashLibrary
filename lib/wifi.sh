@@ -67,7 +67,7 @@ subnet $1 netmask $2 {
   option subnet-mask $2;
   option broadcast-address $bcastIP;
   option domain-name-servers $5 8.8.8.8;
-}
+};
 EOF
     else
       bashlib_abort "$(caller)" "must be launched as root"

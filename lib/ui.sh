@@ -14,13 +14,32 @@ source string.sh
 function ui_showMessage() {
   if [[ $# -eq 2 ]]; then
     case "$1" in
-      emg|emergency) echo -e "[${COLOR_FG_BLINKING_RED}Emergency${COLOR_RESET}] $2";;
-      err|error) echo -e "[${COLOR_FG_RED}Error${COLOR_RESET}] $2";;
-      war|warning) echo -e "[${COLOR_FG_YELLOW}Warning${COLOR_RESET}] $2";;
-      inf|info) echo -e "[${COLOR_FG_GREEN}Info${COLOR_RESET}] $2";;
+      emg|emergency) string_echoRich "[*~r++Emergency++~*] $2";;
+      err|error) string_echoRich "[*~rError~*] $2";;
+      war|warning) string_echoRich "[*~yWarning~*] $2";;
+      inf|info) string_echoRich "[*~gWarning~*] $2";;
     esac
   else
     bashlib_abort "$(caller)" "[level] [message]"
+  fi
+}
+
+# This function returns the <x,y> top-left coordinate to use to start printing something at the center of the screen (a window, a text, ...)
+# arg0: The width of the 'something' that will be printed
+# arg1: The height of the 'something' that will be printed
+# arg2: The variable that will contain the top-left X position
+# arg3: The variable that will contain the top-left Y position
+# Example:
+#   ui_centerTopLeft 30 5 x y
+#   ui_confirmWindow $x $y 30 "Do you agree ?" true result
+function ui_centerTopLeft() {
+  if [[ $# -eq 4 ]]; then
+    local -n __CENTER_X_POSITION__=$3
+    local -n __CENTER_Y_POSITION__=$4
+    __CENTER_X_POSITION__=$(($(tput cols) / 2 - $1 / 2))
+    __CENTER_Y_POSITION__=$(($(tput lines) / 2 - $2 / 2))
+  else
+    bashlib_abort "$(caller)" "[width] [height] [&result0 (X)] [&result1 (Y)]"
   fi
 }
 
@@ -185,5 +204,272 @@ function ui_okWindow() {
 function ui_horizontalRule() {
   local rule=""
   rule=$(printf "%-$(tput cols)s" "=")
-  echo -e "${COLOR_FG_WHITE}${FONT_BOLD}${rule// /=}${NORMAL}"
+  echo -e "${COLOR_FG_WHITE}${FONT_BOLD}${rule// /=}${COLOR_RESET}"
+}
+
+# This function displays and handles a multi-choice menu that map the list of available options with single-characters value (enhanced 'select' operator)
+# arg0: The name of the array containing available options
+# arg1: A boolean telling if we want to retrieve the entered string (true) or the array of option chosen
+# arg2: The name of the variable that will contain the selection (array)
+# Example:
+#   options=(opt1 opt2 opt3)
+#   ui_codebasedMenu options false result
+#   echo "The user selected the following options: ${result[@]}"
+#
+# The menu displayed with the above example will look like:
+# 0 -- opt1
+# 1 -- opt2
+# 2 -- opt3
+# > |
+# The user will be able to give a string (e.g. '20') to select multiple options (e.g. opt3 and opt1)which then will be converted back into the name of the option
+# and returned to the caller. The menu will automatically be drawn on multiple columns if there's not enough lines to display all the options  in 1 and the full
+# alphanumeric chars are available (0-9a-zA-Z) to name the options
+function ui_codebasedMenu() {
+  if [[ $# -eq 3 ]]; then
+    declare -A codeMap
+    local entries="$1[@]"
+    local returnCodes=$2
+    local -n __CODED_SELECTION__=$3
+    local codes=({0..9} {a..z} {A..Z})
+    local pos=0 startingPos=0 id=0 xShift=0 maxColumn=0
+    local input=""
+    terminal_getCursorLine startingPos
+    pos=$((startingPos + 1))
+    for entry in ${!entries}; do
+      tput cup "$pos" "$xShift"
+      value="${codes[$id]} -- $entry "
+      codeMap["${codes[$id]}"]="$entry"
+      echo "$value"
+      pos=$((++pos))
+      id=$((++id))
+      if [[ $pos -gt $(($(tput lines) - 3)) ]]; then
+        xShift=$((xShift + maxColumn))
+        pos=$((startingPos + 1))
+      fi
+      math_max "$maxColumn" "${#value}" maxColumn
+    done
+    tput cup "$(($(tput lines) -2))" 0
+    read -rp "> " input
+    if [[ $returnCodes == true ]]; then
+      __CODED_SELECTION__="$input"
+    else
+      __CODED_SELECTION__=()
+      for ((charId=0; charId < ${#input}; ++charId)); do
+        __CODED_SELECTION__+=("${codeMap[${input:$charId:1}]}")
+      done
+    fi
+    unset codeMap
+  else
+    bashlib_abort "$(caller)" "[&options] [result selection (T/F)] [&result]"
+  fi
+}
+
+# This function prints a nice-looking interactive menu with boolean selection entries (true/false) that is fully usable with arrow keys, the mouse and can
+# have a built-in 'help' message for each available option
+# arg0: The name of the array containing the list of available options
+# arg1: The name of the array containing the option status (array of bool, will be updated at the end with the selection of the user but can already contains
+#   some true/false pre-selection)
+# arg2: (optional) The name of the array containing the 'help' (a short message) about the available options
+# Example:
+#   array=(option1 option2 option3)
+#   state=(false false false)
+#   help=("This is option 1" "Choose this for option 2" "That's option 3 !")
+#   ui_booleanMenu array result help
+#   if [[ ${result[2]} == true ]]; then
+#     echo "The user selected the option ${array[2]} !"
+#   fi
+# Note:
+#   The menu can be used with the arrow keys (jumping from left/right/top/down option), space or enter is used to toggle the current option or with the mouse.
+#   A left click will toggle the option while a right click will toggle the 'help' message if any, entering '?' will also toggle the 'help' in case it exists
+function ui_booleanMenu() {
+  if [[ $# -ge 2 ]]; then
+    declare -A optionMap optionState idMap choiceMap
+    local entries="$1[@]"
+    local -n __BOOL_MENU_STATE__=$2
+    if [[ $# -eq  3 ]]; then
+      local -n optionMsg=$3
+    else
+      optionMsg=()
+    fi
+    local columnSizes=(0) choices=() rowCol=()
+    local topRow=0 maxRow=0 maxCol=0 xShift=0 row=0 col=0 size=0 xPos=0 count=0 posX=0 posY=0 width=0
+    local space="" value="" key="" eventValue="" eventType=""
+    terminal_getCursorLine topRow
+    row=$topRow
+    maxRow=$(($(tput lines) - 4))
+    # First loop over the entries to create the map (<row,col>;entry), (<row,col>;state) and (<row,col>; id); it counts as well the max length of each column
+    for entry in "${!entries}"; do
+      value="$(printf "%02d" ${#optionMap[@]}) $entry"
+      key="$row;$col"
+      optionMap[$key]="$value"
+      optionState[$key]=${__BOOL_MENU_STATE__[$count]}
+      idMap[$key]=$count
+      choiceMap[$key]=${optionMsg[$count]}
+      math_max "${columnSizes[$col]}" "${#value}" columnSizes[$col]
+      row=$((++row))
+      count=$((++count))
+      if [[ $row -ge $maxRow ]]; then
+        row=$topRow
+        col=$((++col))
+        columnSizes+=(0)
+      fi
+    done
+    # Initial print of all the entries based on their position and initial state
+    for value in "${!optionMap[@]}"; do
+      string_tokenize "$value" ";" rowCol
+      xShift=0
+      for ((index=1; index <= rowCol[1]; ++index)); do
+        xShift=$((xShift + ${columnSizes[$((index - 1))]} + 5))
+      done
+      tput cup "$((rowCol[0] + 1))" "$xShift"
+      space=$(printf "%-$((columnSizes[rowCol[1]] - ${#optionMap[$value]} + 1))s" " ")
+      if [[ ${optionState[$value]} == false ]]; then
+        echo "${optionMap[$value]}${space// / }[ ]"
+      else
+        string_echoRich "~A${optionMap[$value]}${space// / }[X]~"
+      fi
+    done
+    tput civis
+    [[ $col -eq 0 ]] && maxRow=$((${#optionMap[@]} + topRow))
+    row=$maxRow
+    col=0
+    # Add a 'confirm' button at the bottom of the menu
+    ui_centerTopLeft 7 1 xPos _
+    tput cup "$((maxRow + 1))" "$xPos"
+    tput sc
+    string_echoRich "*Confirm*"
+    tput rc
+    # Main menu, react to every key press and redraw only the changed/selected options
+    while true; do
+      terminal_readEvent eventValue eventType
+      # Unselect the current option (displayed in bold)
+      if [[ $row -ne $maxRow ]]; then
+        xShift=0
+        for ((index=1; index <= col; ++index)); do
+          xShift=$((xShift + ${columnSizes[$((index - 1))]} + 5))
+        done
+        tput cup "$((row + 1))" "$xShift"
+        value="$row;$col"
+        space=$(printf "%-$((columnSizes[col] - ${#optionMap[$value]} + 1))s" " ")
+        if [[ ${optionState[$value]} == false ]]; then
+          echo "${optionMap[$value]}${space// / }[ ]"
+        else
+          string_echoRich "~A${optionMap[$value]}${space// / }[X]~"
+        fi
+      else
+        tput cup "$((maxRow + 1))" "$xPos"
+        echo "Confirm"
+      fi
+      # Compute which is the new current option
+      if [[ "$eventType" == "arrow" ]]; then
+        case "$eventValue" in
+          UP)
+            if [[ $row -eq $topRow ]]; then
+              row=$maxRow
+            else
+              row=$((--row))
+              while [[ ! ${optionMap["$row;$col"]} ]]; do
+                row=$((--row))
+              done
+            fi;;
+          DOWN)
+            if [[ $row -eq $maxRow ]]; then
+              row=$topRow
+            else
+              row=$((++row))
+              if [[ ! ${optionMap["$row;$col"]} ]]; then
+                row=$maxRow;
+              fi
+            fi;;
+          LEFT) [[ $col -eq 0 ]] && col=$((${#columnSizes[@]} - 1)) || col=$((--col))
+            while [[ ! ${optionMap["$row;$col"]} ]]; do
+              row=$((--row))
+            done;;
+          RIGHT) [[ $col -eq $((${#columnSizes[@]} - 1)) ]] && col=0 || col=$((++col))
+            while [[ ! ${optionMap["$row;$col"]} ]]; do
+              row=$((--row))
+            done;;
+        esac
+      elif [[ "$eventType" == "validation" ]]; then
+        if [[ $row -eq $maxRow ]]; then
+          break
+        else
+          if [[ ${optionState["$row;$col"]} == true ]]; then
+            optionState["$row;$col"]=false;
+            __BOOL_MENU_STATE__[${idMap["$row;$col"]}]=false
+          else
+            optionState["$row;$col"]=true;
+            __BOOL_MENU_STATE__[${idMap["$row;$col"]}]=true
+          fi
+        fi
+      elif [[ "$eventType" == "key" ]]; then
+        case "$eventValue" in
+          ?)
+            if [[ ${choiceMap["$row;$col"]} ]]; then
+              math_min "$(tput cols)" 50 width
+              ui_centerTopLeft "$width" "$((${#choiceMap["$row;$col"]} / 50 + 2))" posX posY
+              ui_okWindow "$posX" "$posY" "$width" "${choiceMap["$row;$col"]}" true
+            fi;;
+        esac
+      elif [[ "$eventType" == "mouse" ]]; then
+        string_tokenize "$eventValue" ";" rowCol
+        if [[ ${rowCol[0]} =~ ^[0-9]+$ ]] && [[ ${rowCol[1]} =~ ^[0-9]+$ ]] && [[ ${rowCol[2]} =~ ^[0-9]+$ ]]; then
+          posX=0
+          posY=$((rowCol[2] - 1))
+          for ((index=0; index < ${#columnSizes[@]}; ++index)); do
+            if [[ $((posX + ${columnSizes[$index]} + 5)) -gt ${rowCol[1]} ]]; then
+              posX=$index
+              break
+            else
+              posX=$((posX + ${columnSizes[$index]} + 5))
+            fi
+          done
+          math_min "$posX" "$((${#columnSizes[@]} - 1))" posX
+          math_max "$((posY - 1))" 0 row
+          col=$posX
+          value="$row;$col"
+          while [[ ! ${optionMap["$row;$col"]} ]]; do
+            row=$((--row))
+          done
+          if [[ "${rowCol[0]}" == "0" ]]; then
+            if [[ ${optionState["$value"]} == true ]]; then
+              optionState["$value"]=false;
+              __BOOL_MENU_STATE__[${idMap["$value"]}]=false
+            else
+              optionState["$value"]=true;
+              __BOOL_MENU_STATE__[${idMap["$value"]}]=true
+            fi
+          elif [[ "${rowCol[0]}" == "2" ]]; then
+            if [[ ${choiceMap["$value"]} ]]; then
+              math_min "$(tput cols)" 50 width
+              ui_centerTopLeft "$width" "$((${#choiceMap["$value"]} / 50 + 2))" posX posY
+              ui_okWindow "$posX" "$posY" "$width" "${choiceMap["$value"]}" true
+            fi
+          fi
+        fi
+      fi
+      # Update the new current option (in bold or apply the change of state)
+      if [[ $row -ne $maxRow ]]; then
+        xShift=0
+        for ((index=1; index <= col; ++index)); do
+          xShift=$((xShift + ${columnSizes[$((index - 1))]} + 5))
+        done
+        tput cup "$((row + 1))" "$xShift"
+        value="$row;$col"
+        space=$(printf "%-$((columnSizes[col] - ${#optionMap[$value]} + 1))s" " ")
+        if [[ ${optionState[$value]} == false ]]; then
+          string_echoRich "*${optionMap[$value]}${space// / }[ ]*"
+        else
+          string_echoRich "*~A${optionMap[$value]}${space// / }[X]~*"
+        fi
+      else
+        tput cup "$((maxRow + 1))" "$xPos"
+        string_echoRich "*Confirm*"
+      fi
+    done
+    tput cvvis
+    unset optionState optionMap idMap choiceMap
+  else
+    bashlib_abort "$(caller)" "[&options] [&states] {&options description}"
+  fi
 }

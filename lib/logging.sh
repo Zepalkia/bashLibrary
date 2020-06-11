@@ -6,7 +6,7 @@
 #   This is only working with bash v4.1 and up, before the 'auto-fd' trick didn't exists and it was required to secure manually the file descriptor, e.g:
 #   eval "exec $fd>>$filename"
 #@VERSION: 4.1
-function log_open() {
+function logging_open() {
   if [[ $# -eq 1 ]]; then
     exec {__BL_LOG_FD__}>>"$1"
   else
@@ -19,7 +19,7 @@ function log_open() {
 #   This is only working with bash v4.1 and up, before the 'auto-fd' trick didn't exists and it was required to secure manually the file descriptor, e.g:
 #   eval "exec $fd<&-"
 #@VERSION: 4.1
-function log_close() {
+function logging_close() {
   __IS_LOG_OPEN__=false
   exec {__BL_LOG_FD__}<&-
 }
@@ -39,7 +39,7 @@ function log_close() {
 #   want to use. To use it with log_open/log_close you'll need at least bash version 4.1 or modify the redirection to be compatible with pre-4.1:
 #   eval "echo ... >&$fd"
 #@VERSION: 4.1
-function log_write() {
+function logging_write() {
   if [[ -n $__BL_LOG_FD__ ]]; then
     local timestamp=""
     local line=""
