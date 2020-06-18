@@ -9,6 +9,7 @@ function testing_assertSuccess() {
   local funcName="$1"
   local cmd="$*"
   shift
+  # shellcheck disable=SC2086
   if eval $cmd; then
     result=0
   else
@@ -22,6 +23,7 @@ function testing_assertFailure() {
   local funcName="$1"
   local cmd="$*"
   shift
+  # shellcheck disable=SC2086
   if ! eval $cmd; then
     result=0
   else
@@ -36,6 +38,7 @@ function testing_assertExit() {
   local expectedCode="$2"
   shift 2
   local cmd="$funcName $*"
+  # shellcheck disable=SC2086
   (eval $cmd &>/dev/null)&
   wait $!
   errno=$?
@@ -100,6 +103,7 @@ function testing_testCase() {
     while read -r inputLine; do
       nTests=$((++nTests))
       cmd="testing_$inputLine"
+      # shellcheck disable=SC2086
       if eval $cmd; then
         success=$((++success))
       else

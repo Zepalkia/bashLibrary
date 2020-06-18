@@ -53,7 +53,7 @@ The following options can be used:
     shift
   done
   version=0.0.1
-  library="bashLibrary${version}.sh"
+  library="bashLibrary.sh"
   mkdir ".temp"
   for file in lib/*; do
     tokens=()

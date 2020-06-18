@@ -1,4 +1,4 @@
-source ../bashLibrary0.0.1.sh
+source ../bashLibrary.sh
 
 threads_create thr0 << THREAD
 while [[ \$running == true ]]; do

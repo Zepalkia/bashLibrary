@@ -1,4 +1,4 @@
-source ../bashLibrary0.0.1.sh
+source ../bashLibrary.sh
 
 testing_testCase "Max function" << TEST
 assertSuccess math_max 0 2 max

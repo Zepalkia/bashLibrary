@@ -492,6 +492,7 @@ function ui_waitbarCreate() {
   if [[ $# -eq 4 ]]; then
     local -n __WAITBAR_INSTANCE__=$4
     local dataExch="/tmp/$RANDOM"
+    local waitbar=""
     threads_create waitbar << THREAD
 xPosition=$1
 yPosition=$2

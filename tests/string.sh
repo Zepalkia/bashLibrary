@@ -1,4 +1,4 @@
-source ../bashLibrary0.0.1.sh
+source ../bashLibrary.sh
 
 testing_testCase "Changing case" << TEST
 assertSuccess string_toUpperCase "Test" res
