@@ -42,4 +42,3 @@ function waiting_cursor() {
     bashlib_abort "$(caller)" "${FUNCNAME[0]}" "[pid]"
   fi
 }
-

@@ -1,7 +1,10 @@
+#@DEPENDENCIES: inotify-tools
 source variables.sh
 source math.sh
 source terminal.sh
 source string.sh
+source threads.sh
+source lockable.sh
 
 # This function shows formated message to display status to the user
 # arg0: The level of the message
@@ -17,7 +20,7 @@ function ui_showMessage() {
       emg|emergency) string_echoRich "[*~r++Emergency++~*] $2";;
       err|error) string_echoRich "[*~rError~*] $2";;
       war|warning) string_echoRich "[*~yWarning~*] $2";;
-      inf|info) string_echoRich "[*~gWarning~*] $2";;
+      inf|info) string_echoRich "[*~gInfo~*] $2";;
     esac
   else
     bashlib_abort "$(caller)" "[level] [message]"
@@ -471,5 +474,94 @@ function ui_booleanMenu() {
     unset optionState optionMap idMap choiceMap
   else
     bashlib_abort "$(caller)" "[&options] [&states] {&options description}"
+  fi
+}
+
+# This function creates and displays a waiting bar that can then be updated during the main process using waitbarUpdate, the waitbar will be a thread running
+# in background without using CPU (but required inotify-tools package) and that can be trigger to update it's display by any other thread
+# arg0: The X position of the waitbar
+# arg1: The Y position of the waitbar
+# arg2: The width of the waitbar
+# arg3: The name of the variable that will contain the result (waitbar object)
+# Note:
+#   The waitbar will adapt its graphics to the width and will expect a percentage value (empty being 0 and full being 100), see ui_waitbarUpdate for more info.
+#   When reaching a percentage of 100 the thread will kill itself automatically (the waitbar is not designed to go to a percentage lower than one previously
+#   set despite this would be easy to change if required)
+#@DEPENDS: inotify-tools
+function ui_waitbarCreate() {
+  if [[ $# -eq 4 ]]; then
+    local -n __WAITBAR_INSTANCE__=$4
+    local dataExch="/tmp/$RANDOM"
+    threads_create waitbar << THREAD
+xPosition=$1
+yPosition=$2
+width=$3
+percentage=0
+lastPercentage=0
+position=\$((xPosition+1))
+if [[ \$width -gt \$(tput cols) ]]; then
+  width=\$(tput cols)
+fi
+loadingBar=\$(printf "%-\$((width))s" " ")
+tput sc
+tput cup \$yPosition \$xPosition
+echo -e "[${COLOR_FG_GRAY}\${loadingBar// /▒}${COLOR_RESET}]"
+tput rc
+mkdir "$dataExch"
+while [[ \$running == true ]]; do
+  res=\$(inotifywait -e create $dataExch 2>/dev/null)
+  file=\${res#?*CREATE }
+  percentage=\$(cat $dataExch/\$file 2>/dev/null)
+  [[ \$percentage -gt 100 ]] && percentage=100 && running=false
+  if [[ \$percentage -gt \$lastPercentage ]]; then
+    lastPercentage=\$percentage
+    percentage=\$((percentage * width / 100))
+    loadingBar=\$(printf "%-\$((percentage))s" " ")
+    tput sc
+    tput cup \$yPosition \$((xPosition + 1))
+    echo -e "${COLOR_FG_GREEN}\${loadingBar// /▒}${COLOR_RESET}"
+    tput rc
+    rm -f "$dataExch/\$file"
+  fi
+done
+rm -r "$dataExch"
+THREAD
+    threads_run "$waitbar"
+    __WAITBAR_INSTANCE__="$waitbar:$dataExch"
+  else
+    bashlib_abort "$(caller)" "[x position] [y position] [width] [&waitbar]"
+  fi
+}
+
+# This function will update the completion of the waitbar on the screen
+# arg0: The waitbar object previously created using ui_waitbarCreate
+# arg1: The new percentage of completion [0-100]
+# Note:
+#   Be aware than drawing this update will need to tput the cursor somewhere else on the screen, it would be a good idea, as this is done asynchronously, to
+#   have a lock preventing other running threads playing with the cursor to do so during the update of the waitbar
+function ui_waitbarUpdate() {
+  if [[ $# -eq 2 ]]; then
+    string_tokenize "$1" ":" tokens
+    if [[ ${#tokens[@]} -eq 2 ]]; then
+      echo "$2" 2>/dev/null > "${tokens[1]}/data"
+    else
+      bashlib_abort "$(caller)" "[waitbar] [new percentage]"
+    fi
+  else
+    bashlib_abort "$(caller)" "[waitbar] [new percentage]"
+  fi
+}
+
+# This function will delete the thread handling the waitbar, should be called during cleanup otherwise the thread will be left forever in the thread pool and in
+# the system if the waitbar never reached 100%
+# arg0: The waitbar object to delete
+function ui_waitbarDelete() {
+  if [[ $# -eq 1 ]]; then
+    string_tokenize "$1" ":" tokens
+    threads_kill "${tokens[0]}" "9"
+    threads_join "${tokens[0]}"
+    rm -r "${tokens[1]}" &>/dev/null
+  else
+    bashlib_abort "$(caller)" "[waitbar]"
   fi
 }

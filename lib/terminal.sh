@@ -14,7 +14,7 @@ function terminal_getCursorLine() {
     echo -en "\033[6n"
     # shellcheck disable=SC2162
     # Very-specific read, we need to specifically avoid putting -r here to make it work
-    read -sdR cursorPosition
+    read -sdR cursorPosition < /dev/tty
     cursorPosition=${cursorPosition#*[}
     value=$(echo "$cursorPosition" | awk -F ';' '{print $1}')
     test "$value" -eq "$value" || value=0

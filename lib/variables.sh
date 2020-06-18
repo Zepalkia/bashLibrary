@@ -54,6 +54,7 @@ FONT_COLOR_REVERSE=$(tput rev)
 FONT_BLINK=$(tput blink)
 FONT_INVISIBLE=$(tput invis)
 FONT_RESET=$(tput sgr0)
+declare -A __BL_THREAD_POOL__
 # This function stops the script execution and display an error to the user, used internally by the library to manage the wrong usage of functions
 # arg0: The $(caller) result as a string
 # arg1: The message to display to the user

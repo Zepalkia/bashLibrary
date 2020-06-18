@@ -18,3 +18,6 @@ A collection of bash scripts offering lots of useful functionalities and example
 
 ## Disclaimer
 
+- require writable /tmp => can be overrided
+- not POSIX at all
+- lots of bash-specific features in use

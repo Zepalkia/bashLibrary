@@ -18,13 +18,13 @@ function prompt_readWithDefault() {
     nChars=$(printf "%-$((${#1} + 3))s" " ")
     echo -en "> ${COLOR_FG_GRAY}$1${COLOR_RESET}"
     tput civis
-    read -rn 1 input1
+    read -rn 1 input1 < /dev/tty
     if [[ ${#input1} -eq 0 ]]; then
       __READ_VALUE__=$1
     else
       tput cvvis
       echo -en "\b \r${nChars// / }\r"
-      read -rp "> " -ei "$input1" input2
+      read -rp "> " -ei "$input1" input2 < /dev/tty
       if [[ ${#input2} -eq 0 ]]; then
         __READ_VALUE__=$1
       else
@@ -51,7 +51,7 @@ function prompt_confirmation() {
   if [[ $# -eq 2 ]]; then
     local -n __CONFIRMATION_VALUE__=$2
     valid=true
-    read -rp "$1" input
+    read -rp "$1" input < /dev/tty
   elif [[ $# -eq 3 ]]; then
     local -n __CONFIRMATION_VALUE__=$3
     valid=true
@@ -69,7 +69,7 @@ function prompt_confirmation() {
         n|N|no|No)
           __CONFIRMATION_VALUE__=false
           break;;
-        *) read -rp "Please answer 'yes' or 'no': " choice;;
+        *) read -rp "Please answer 'yes' or 'no': " choice < /dev/tty;;
       esac
     done
   fi

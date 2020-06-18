@@ -7,7 +7,7 @@
 #   echo "I safely arrived into $PWD !"
 function utilities_safeCD() {
   if [[ $# -eq 1 ]]; then
-    if ! cd "$1"; then
+    if ! cd "$1" &>/dev/null; then
       bashlib_abort "$(caller)" "the folder $1 cannot be reached from the current one ($PWD)"
     fi
   else

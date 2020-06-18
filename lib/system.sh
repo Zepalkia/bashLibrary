@@ -17,6 +17,33 @@ function system_commandExists() {
   return $__COMMAND_DOES_EXISTS__
 }
 
+# This function checks if all the commands given in an array exists in one single call
+# arg0: The name of the array containing all the commands to check
+# arg1: The name of the variable that will contain the name of the FIRST missing command
+# return: 0 if all the commands exists, 1 otherwise
+# Example:
+#   commands=("zip" "ls" "bash")
+#   if ! system_commandsExists commands result; then
+#     echo "Missing command: $result"
+#   fi
+function system_commandsExists() {
+  local __COMMANDS_ALL_FOUND__=0
+  local -n __MISSING_COMMAND__=$2
+  local cmdArray="$1[@]"
+  if [[ $# -eq 2 ]]; then
+    for cmd in "${!cmdArray}"; do
+      if ! system_commandExists "$cmd"; then
+        __COMMANDS_ALL_FOUND__=1
+        __MISSING_COMMAND__="$cmd"
+        break
+      fi
+    done
+  else
+    bashlib_abort "$(caller)" "[array of commands] [&first non existing command (if any)]"
+  fi
+  return $__COMMANDS_ALL_FOUND__
+}
+
 # This function checks if a given package is installed on the system using dpkg
 # arg0: The name of the package to look for
 # Example:

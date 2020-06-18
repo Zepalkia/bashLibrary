@@ -1,4 +1,4 @@
-#@PRIORITY: 7
+#@PRIORITY: 0
 source variables.sh
 
 # This function transforms a string by making all its chars in upper case
@@ -53,6 +53,7 @@ function string_trim() {
       *) false;;
     esac
   else
+    echo "[$1][$2][$3][$4][$5][$6][$7]"
     bashlib_abort "$(caller)" "[string to trim] [leading/trailing/all] [&result]"
   fi
 }
@@ -237,19 +238,5 @@ function string_echoPosition() {
     tput rc
   else
     bashlib_abort "$(caller)" "[string] [X coordinate] [Y coordinate] {line clear wanted [T/F]}"
-  fi
-}
-
-function string_remove() {
-  if [[ $# -eq 3 ]]; then
-    local string="$1"
-    local substrToRemove="$2[@]"
-    local -n __CLEANED_STRING__=$3
-    for substr in ${!substrToRemove}; do
-      string=${string//$substr/}
-    done
-    __CLEANED_STRING__=$string
-  else
-    bashlib_abort "$(caller)" "[string] [&array of substrings] [&result]"
   fi
 }

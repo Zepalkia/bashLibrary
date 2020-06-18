@@ -13,6 +13,7 @@ if lockable_globalTryLock 2; then
   comment=true
   smart=()
   stopOnFailure=false
+  testing=false
   functions=$(grep -oE "function [a-z]+_[a-zA-Z]+" lib/* | awk '{print $2}')
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -23,6 +24,8 @@ The following options can be used:
     The bashLibrary.sh file will not contain any comment or documentation
   **--stop**
   Will stop in case of any failure during shellcheck validation
+  **--test**
+  Will run the unit tests at the end of the process
   **--smart**
   Will generate a subset of the full library containing only required functions and without comments or additional content"
         lockable_globalUnlock
@@ -31,6 +34,8 @@ The following options can be used:
         comment=false;;
       --stop)
         stopOnFailure=true;;
+      --test)
+        testing=true;;
       --smart)
         shift
         while [[ $# -gt 0 ]] && [[ $1 != -* ]]; do
@@ -120,7 +125,7 @@ The following options can be used:
           scope=false
         elif [[ $scope == false ]]; then
           # No need to source anything anymore, everything will be put into a single file
-          if [[ ! $line =~ source ]] || [[ "$file" == "lib/variables.sh" ]]; then
+          if [[ ! $line =~ ^source ]] || [[ "$file" == "lib/variables.sh" ]]; then
             if [[ $comment == false ]] && [[ $line == \#* ]]; then
               continue;
             fi
@@ -181,6 +186,13 @@ EOF
   fi
   lockable_globalUnlock
   rmdir ".temp"
+  if [[ $testing == true ]]; then
+    cd "tests"
+    for file in *; do
+      bash "$file"
+    done
+    cd - &>/dev/null
+  fi
 else
   echo "Process already running !"
 fi
