@@ -1,3 +1,0 @@
-[cli]
-bears = SyntaxBear
-files = ../lib/*.sh

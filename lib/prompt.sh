@@ -13,17 +13,18 @@ function prompt_readWithDefault() {
   if [[ $# -eq 2 ]]; then
     local input1=""
     local input2=""
-    local nChars=$(printf "%-$((${#1} + 3))s" " ")
+    local nChars=""
     local -n __READ_VALUE__=$2
+    nChars=$(printf "%-$((${#1} + 3))s" " ")
     echo -en "> ${COLOR_FG_GRAY}$1${COLOR_RESET}"
     tput civis
-    read -rn 1 input1
+    read -rn 1 input1 < /dev/tty
     if [[ ${#input1} -eq 0 ]]; then
       __READ_VALUE__=$1
     else
       tput cvvis
       echo -en "\b \r${nChars// / }\r"
-      read -rp "> " -ei "$input1" input2
+      read -rp "> " -ei "$input1" input2 < /dev/tty
       if [[ ${#input2} -eq 0 ]]; then
         __READ_VALUE__=$1
       else
@@ -32,7 +33,7 @@ function prompt_readWithDefault() {
     fi
     tput cvvis
   else
-    false
+    bashlib_abort "$(caller)" "[default value] [&result]"
   fi
 }
 
@@ -43,20 +44,21 @@ function prompt_readWithDefault() {
 # Example:
 #   prompt_confirmation "Do you agree with me ? [y/n] " result
 #   [[ $result == true ]] && echo "Thank you !" || echo "Too bad :("
+# See also 'ui_confirmWindow'
 function prompt_confirmation() {
   local valid=false
   local input=""
   if [[ $# -eq 2 ]]; then
     local -n __CONFIRMATION_VALUE__=$2
     valid=true
-    read -rp "$1" input
+    read -rp "$1" input < /dev/tty
   elif [[ $# -eq 3 ]]; then
     local -n __CONFIRMATION_VALUE__=$3
     valid=true
     echo -e "$1"
-    prompt_readWithDefault $2 input
+    prompt_readWithDefault "$2" input
   else
-    false
+    bashlib_abort "$(caller)" "[message] {default answer} [&result]"
   fi
   if [[ $valid == true ]]; then
     while true; do
@@ -67,7 +69,7 @@ function prompt_confirmation() {
         n|N|no|No)
           __CONFIRMATION_VALUE__=false
           break;;
-        *) read -rp "Please answer 'yes' or 'no': " choice;;
+        *) read -rp "Please answer 'yes' or 'no': " choice < /dev/tty;;
       esac
     done
   fi

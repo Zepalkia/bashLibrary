@@ -1,26 +1,52 @@
 #@DEPENDENCIES: bc
 
-# This function tokenize a string using a given delimiter and store the tokens into an array
-# arg0: The string to tokenize
-# arg1: The delimiter
-# arg2: The name of the variable that will contain the final result (will be an array)
+# This function safely changes directory and stops the full execution in case it failed
+# arg0: The path of the directory we want to use
 # Example:
-#   utilities_stringTokenize "I;AM;ERROR" ";" array
-#   echo "My name is: ${array[2]}"
-function utilities_stringTokenize() {
-  if [[ $# -eq 3 ]]; then
-    local string="$1$2"
-    local -n __TOKENIZED_STRING__=$3
-    __TOKENIZED_STRING__=()
-    while [[ $string ]]; do
-      __TOKENIZED_STRING__+=("${string%%"$2"*}")
-      string=${string#*"$2"}
-    done
+#   utilities_safeCD "/tmp/mypath"
+#   echo "I safely arrived into $PWD !"
+function utilities_safeCD() {
+  if [[ $# -eq 1 ]]; then
+    if ! cd "$1" &>/dev/null; then
+      bashlib_abort "$(caller)" "the folder $1 cannot be reached from the current one ($PWD)"
+    fi
   else
-    false
+    bashlib_abort "$(caller)" "[path]"
   fi
 }
 
+# This function checks if a given ipv4 is following the proper format and is valid or not
+# arg0: The ip to validate
+# Example:
+#   if utilities_validateIP 192.168.5.1; then
+#     echo "The ip is valid !"
+#   fi
+function utilities_validateIP() {
+  local __IS_IP_VALID__=1
+  if [[ $# -eq 1 ]]; then
+    if [[ "$1" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
+      local oldIFS=$IFS
+      local ip=()
+      IFS="."
+      # shellcheck disable=SC2206
+      ip=($1)
+      if [[ ${ip[0]} -le 255 ]] && [[ ${ip[1]} -le 255 ]] && [[ ${ip[2]} -le 255 ]] && [[ ${ip[3]} -le 255 ]]; then
+        __IS_IP_VALID__=0
+      fi
+      IFS=$oldIFS
+    fi
+  else
+    bashlib_abort "$(caller)" "[ip]"
+  fi
+  return $__IS_IP_VALID__
+}
+
+# This function uses bc to convert a given number of bytes into a readable string
+# arg0: The number of bytes to convert
+# arg1: The name of the variable that will contain the readable value with unit (string)
+# Example:
+#   utilities_bytesToReadable 53082459082 result
+#   echo "Result: $res" # print '49.43 Gio'
 #@DEPENDS: bc
 function utilities_bytesToReadable() {
   if [[ $# -eq 2 ]]; then
@@ -34,7 +60,6 @@ function utilities_bytesToReadable() {
     done
     __READABLE_BYTES__="$bytes ${unit[$index]}"
   else
-    false
+    bashlib_abort "$(caller)" "[bytes] [&result]"
   fi
 }
-
