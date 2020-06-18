@@ -1,4 +1,4 @@
-source ../bashLibrary0.0.1.sh
+source ../bashLibrary.sh
 
 logging_startTrace
 testing_testCase "Global locking" << TEST

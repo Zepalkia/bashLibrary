@@ -1,4 +1,4 @@
-source ../bashLibrary0.0.1.sh
+source ../bashLibrary.sh
 
 testing_testCase "Display messages" << TEST
 assertSuccess ui_showMessage emg \""Emergency message\""

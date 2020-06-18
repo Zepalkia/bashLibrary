@@ -1,4 +1,4 @@
-source ../bashLibrary0.0.1.sh
+source ../bashLibrary.sh
 file=/tmp/testing$RANDOM
 curr="$PWD"
 mkdir "$file"
