@@ -13,6 +13,3 @@ TEST
 testing_testCase "Test windows" << TEST
 assertSuccess ui_okWindow 0 0 20 \""This window should be in the top-left corner\"" true
 TEST
-#assertSuccess ui_centerTopLeft 20 4 X Y
-# assertSuccess ui_confirmWindow \$X \$Y 20 \""Is this window well centered ?\"" true res
-# assertEqual \$res true

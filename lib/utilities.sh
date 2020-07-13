@@ -15,6 +15,19 @@ function utilities_safeCD() {
   fi
 }
 
+# This function trigger a sleep that can be interupted while the process is sleeping
+# arg0: The time to sleep
+# Note:
+#   This can be useful when working with multiple processes as in bash a sleeping process will never trigger any trapped signal until the end of the sleep
+function utilities_interruptableSleep() {
+  if [[ $# -eq 1 ]]; then
+    sleep "$1" &
+    wait $!
+  else
+    bashlib_abort "$(caller)" "[time to sleep]"
+  fi
+}
+
 # This function checks if a given ipv4 is following the proper format and is valid or not
 # arg0: The ip to validate
 # Example:

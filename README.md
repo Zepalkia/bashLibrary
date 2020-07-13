@@ -16,9 +16,9 @@ This project is a collection of bash scripts offering lots of useful functionali
 
 ## Library generation
 
-You can directly download the latest 'bashLibrary.sh' script from the release list
+You can directly download the latest 'bashLibrary.sh' script from the release list in github or through the github API
 
->
+> curl -s https://api.github.com/repos/Zepalkia/bashLibrary/releases/latest | grep "browser\_download\_url" | cut -d : -f 2,3 | tr -d \" | wget -qi -
 
 You can as well clone the full repository and run in the root folder the 'generateLibrary.sh' script manually
 

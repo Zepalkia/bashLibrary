@@ -1,4 +1,4 @@
-#@DEPENDENCIES: network-manager, isc-dhcp-server, iptables
+#@DEPENDENCIES: network-manager, isc-dhcp-server, iptables, aircrack-ng
 source string.sh
 
 # This function performs a scan of the wifi to retrieve the available networks (only their SSID)
@@ -63,11 +63,10 @@ log-facility local7;
 subnet $1 netmask $2 {
   authoritative;
   range $3 $4;
-  option routes $5;
   option subnet-mask $2;
   option broadcast-address $bcastIP;
-  option domain-name-servers $5 8.8.8.8;
-};
+  option domain-name-servers $5;
+}
 EOF
     else
       bashlib_abort "$(caller)" "must be launched as root"
@@ -108,7 +107,7 @@ function wifi_createHotspot() {
         dhclient -r "$interface"
         pkill -f "dhclient $interface"
         service isc-dhcp-server stop &>/dev/null
-        ifconfig "$interface" "$hotspotIp" &>/dev/null
+        ifconfig "$interface" "$hotspotIp" netmask 255.255.255.0 &>/dev/null
         service isc-dhcp-server start &>/dev/null
       fi
     else
@@ -119,7 +118,25 @@ function wifi_createHotspot() {
   fi
 }
 
+
+function wifi_startMonitorHotspot() {
+  true
+}
+
+function wifi_stopMonitorHotspot() {
+  true
+}
+
+# This function stops the hotspot launched by the wifi_createHotspot function, depending on the OS the system will automatically re-connect itself to the last
+# valid connection if any is availabel
+#@DEPENDS: network-manager
+function wifi_stopHotspot() {
+  wifi_stopMonitorHotspot
+  nmcli con del "hotspot" &>/dev/null
+}
+
 #@DEPENDS iptables
 function wifi_shareInternet() {
   true
 }
+
