@@ -9,7 +9,7 @@
 # Note:
 #  The index of the first occurence will be returned in case of multiple max values
 function array_argmax() {
-  if [[ $# -eq 3 ]] && [[ "$(declare -p "$1")" =~ "declare -a" ]]; then
+  if [[ $# -eq 3 ]] && [[ $(declare -p 2>/dev/null | grep "$1" | grep -c "declare -a") -gt 0 ]]; then
     local -n __MAXIMUM_VALUE__=$2
     local -n __ARGMAX_VALUE__=$3
     local mathArray="$1[@]"
@@ -43,7 +43,7 @@ function array_argmax() {
 # Note:
 #  The index of the first occurence will be returned in case of multiple min values
 function array_argmin() {
-  if [[ $# -eq 3 ]] && [[ "$(declare -p "$1")" =~ "declare -a" ]]; then
+  if [[ $# -eq 3 ]] && [[ $(declare -p 2>/dev/null | grep "$1" | grep -c "declare -a") -gt 0 ]]; then
     local -n __MINIMUM_VALUE__=$2
     local -n __ARGMIN_VALUE__=$3
     local mathArray="$1[@]"

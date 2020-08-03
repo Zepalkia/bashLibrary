@@ -240,3 +240,15 @@ function string_echoPosition() {
     bashlib_abort "$(caller)" "[string] [X coordinate] [Y coordinate] {line clear wanted [T/F]}"
   fi
 }
+
+function string_contains() {
+  local __STRING_DOES_CONTAIN__=1
+  if [[ $# -eq 2 ]]; then
+    if [[ $1 == *"$2"* ]]; then
+      __STRING_DOES_CONTAIN__=0
+    fi
+  else
+    bashlib_abort "$(caller)" "[string] [substring to check]"
+  fi
+  return $__STRING_DOES_CONTAIN__
+}

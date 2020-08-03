@@ -94,7 +94,7 @@ function options_display() {
 # (key = option name, value = argument), see the example for more info
 function options_parse() {
   local __PARSING_SUCCESS__=1
-  if [[ $# -gt 1 ]] && [[ $(declare -p "$1" 2>/dev/null | grep -o "\-A") ]]; then
+  if [[ $# -gt 1 ]] && [[ $(declare -p 2>/dev/null | grep "$1" | grep -o "\-A") ]]; then
     local -n __OPTION_PARSING_RESULT__=$1
     local currentOption=""
     local char=""

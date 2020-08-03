@@ -42,3 +42,21 @@ function waiting_cursor() {
     bashlib_abort "$(caller)" "${FUNCNAME[0]}" "[pid]"
   fi
 }
+
+# This function display a given text in a single line and put back the cursor at the beginning, expected to be called while a background process is running
+# Example:
+#   waiting_textualSteps "Starting process..."
+#   #do stuff
+#   waiting_textualSteps "Step 2"
+# Note:
+#   The background stuff in-between should not output anything nor play with tput without putting back the cursor to it's initial state, this is expecting to be
+#   manually triggered and to update all the time the same line
+function waiting_textualSteps() {
+  if [[ $# -eq 1 ]]; then
+    echo -en "$1"
+    tput el
+    echo -en "\r"
+  else
+    bashlib_abort "$(caller)" "[text to display]"
+  fi
+}
