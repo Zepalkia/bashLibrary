@@ -4,17 +4,21 @@ source lockable.sh
 # Here's a global example showing how the following functions can be used altogether
 # Global example:
 # ------------------------------------
+# function waitSeconds() {
+#   sleep "$1"
+# }
 # threads_create thread0 << THREAD
 #count=0
 #while [[ \$running == true ]]; do
 #  count=\$((++count))
 #  touch /tmp/"\$count"
-#  sleep 7
+#  waitSeconds 7
 #done
 #THREAD
 #
+# threads_injectFunction "$thread0" "waitSeconds"
 # threads_run "$thread0"
-# sleep 60
+# waitSeconds 60
 # threads_kill "$thread0"
 # threads_join "$thread0"
 # -----------------------------------
@@ -23,7 +27,8 @@ source lockable.sh
 # having finished the full iteration.
 # By using threads_kill "$thread0" "9" the thread would have been killed immediatly with -9 (SIGKILL), and the thread can be relaunched as many time as required
 # as long threads_delete is not called.
-# This allow to easily creates background piece of codes in a more readable way with some sort of "smartness" in the killing and handling process
+# This allow to easily creates background piece of codes in a more readable way with some sort of "smartness" in the killing and handling process, we can also
+# see here how easy it becomes to inject already-defined functions inside the thread without having to re-define them
 
 
 # This function creates a new thread ready to be launched and handled by the following functions
@@ -183,13 +188,53 @@ function threads_delete() {
 
 # This function clears the bashLibrary thread pool by trying to kill, join and delete all of them. In case some threads are still running and cannot be joined in
 # less than 2 seconds they will still be in the pool, there's not guarantee the pool will be completely empty after this call and threads could still be running
-# if they cannot be killed (this function will send directly SIGKILL to force as much as possible the thread to be killed)
+# if they cannot be killed
+# arg0: A boolean that tells if we want to SIGKILL all the threads (true, default) or to just kill them properly (see threads_kill)
 function threads_poolClear() {
   for thr in "${!__BL_THREAD_POOL__[@]}"; do
-    threads_kill "$thr" "9"
+    if [[ $# -eq 1 ]] && [[ $1 == false ]]; then
+      threads_kill "$thr"
+    else
+      threads_kill "$thr" "9"
+    fi
     threads_tryJoin "$thr" 5
     if threads_delete "$thr"; then
       unset __BL_THREAD_POOL__["$thr"]
     fi
   done
+}
+
+# This function injects a function declared in the launcher process inside the thread. This can be very handy to not have to manually copy-paste some part to
+# add them inside the thread
+# arg0: The thread in which to inject the function
+# arg1: The name of the function
+# return: 0 if the injection worked, 1 otherwise
+# Example: See global example at top
+function threads_injectFunction() {
+  local __THREAD_INJECTION_SUCCESS__=1
+  if [[ $# -eq 2 ]]; then
+    if [[ "$(type -t "$2")" == "function" ]] && [[ -f "/tmp/.$1" ]]; then
+      # shellcheck disable=SC2005
+      # This 'echo' is required here to print the data we want (the body of the declared function)
+      cat <(echo "$(declare -f "$2")") "/tmp/.$1" > "/tmp/.$1_2"
+      mv "/tmp/.$1_2" "/tmp/.$1"
+      __THREAD_INJECTION_SUCCESS__=0
+    fi
+  else
+    bashlib_abort "$(caller)" "[thread] [function name]"
+  fi
+  return $__THREAD_INJECTION_SUCCESS__
+}
+
+# This function sends a specific signal to a given thread
+# arg0: The thread to notify
+# arg1: The signal number to send (e.g. "9" for SIGKILL)
+function threads_notify() {
+  if [[ $# -eq 2 ]]; then
+    if [[ ${__BL_THREAD_POOL__["$1"]} ]]; then
+      kill "-$2" "${__BL_THREAD_POOL__["$1"]}"
+    fi
+  else
+    bashlib_abort "$(caller)" "[thread] [signal]"
+  fi
 }

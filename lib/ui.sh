@@ -406,14 +406,13 @@ function ui_booleanMenu() {
           fi
         fi
       elif [[ "$eventType" == "key" ]]; then
-        case "$eventValue" in
-          ?)
-            if [[ ${choiceMap["$row;$col"]} ]]; then
-              math_min "$(tput cols)" 50 width
-              ui_centerTopLeft "$width" "$((${#choiceMap["$row;$col"]} / 50 + 2))" posX posY
-              ui_okWindow "$posX" "$posY" "$width" "${choiceMap["$row;$col"]}" true
-            fi;;
-        esac
+        if [[ "$eventValue" == "?" ]]; then
+          if [[ ${choiceMap["$row;$col"]} ]]; then
+            math_min "$(tput cols)" 50 width
+            ui_centerTopLeft "$width" "$((${#choiceMap["$row;$col"]} / 50 + 2))" posX posY
+            ui_okWindow "$posX" "$posY" "$width" "${choiceMap["$row;$col"]}" true
+          fi
+        fi
       elif [[ "$eventType" == "mouse" ]]; then
         string_tokenize "$eventValue" ";" rowCol
         if [[ ${rowCol[0]} =~ ^[0-9]+$ ]] && [[ ${rowCol[1]} =~ ^[0-9]+$ ]] && [[ ${rowCol[2]} =~ ^[0-9]+$ ]]; then
@@ -492,8 +491,8 @@ function ui_waitbarCreate() {
   if [[ $# -eq 4 ]]; then
     local -n __WAITBAR_INSTANCE__=$4
     local dataExch="/tmp/$RANDOM"
-    local waitbar=""
-    threads_create waitbar << THREAD
+    local waitbarObject=""
+    threads_create waitbarObject << THREAD
 xPosition=$1
 yPosition=$2
 width=$3
@@ -527,8 +526,8 @@ while [[ \$running == true ]]; do
 done
 rm -r "$dataExch"
 THREAD
-    threads_run "$waitbar"
-    __WAITBAR_INSTANCE__="$waitbar:$dataExch"
+    threads_run "$waitbarObject"
+    __WAITBAR_INSTANCE__="$waitbarObject:$dataExch"
   else
     bashlib_abort "$(caller)" "[x position] [y position] [width] [&waitbar]"
   fi

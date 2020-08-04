@@ -93,7 +93,6 @@ function system_createSwap() {
   local __SWAP_CREATED__=1
   if [[ $# -ge 1 ]]; then
     if [[ $EUID -eq 0 ]]; then
-      return 0
       local swapFile="/swapfile"
       if [[ $# -eq 2 ]]; then
         swapFile="$2"
@@ -145,4 +144,19 @@ function system_clearSwap() {
     bashlib_abort "$(caller)" "must be run as root"
   fi
   return $__SWAP_CLEARED__
+}
+
+# This function launch an already-declared function as root using 'sudo' utility
+# arg0: The name of the function to launch as root
+# arg1: The name of the variable that will contain the value returned by the function
+# Note:
+#   The process will catch any output and write it inside the /tmp/.dump file in case it's required to check some output data
+function system_asRoot() {
+  if [[ $# -ge 2 ]] && [[ "$(type -t "$1")" == "function" ]]; then
+    local -n __AS_ROOT_RESULT__=$2
+    sudo bash -c "$(declare -f "$1"); $1 $3 &>/tmp/.dump"
+    __AS_ROOT_RESULT__=$?
+  else
+    bashlib_abort "$(caller)" "[function name] [&result] {arguments}"
+  fi
 }

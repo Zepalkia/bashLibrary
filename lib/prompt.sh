@@ -69,7 +69,7 @@ function prompt_confirmation() {
         n|N|no|No)
           __CONFIRMATION_VALUE__=false
           break;;
-        *) read -rp "Please answer 'yes' or 'no': " choice < /dev/tty;;
+        *) read -rp "Please answer 'yes' or 'no': " input < /dev/tty;;
       esac
     done
   fi

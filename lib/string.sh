@@ -240,3 +240,23 @@ function string_echoPosition() {
     bashlib_abort "$(caller)" "[string] [X coordinate] [Y coordinate] {line clear wanted [T/F]}"
   fi
 }
+
+# This function checks if a given string contains a given substring
+# arg0: The main string to check
+# arg1: The substring we are looking for
+# return: 0 if arg1 is present inside arg0, 1 otherwise
+# Example:
+#   if string_contains "Hello World !" "orl"; then
+#     echo "Success !"
+#   fi
+function string_contains() {
+  local __STRING_DOES_CONTAIN__=1
+  if [[ $# -eq 2 ]]; then
+    if [[ $1 == *"$2"* ]]; then
+      __STRING_DOES_CONTAIN__=0
+    fi
+  else
+    bashlib_abort "$(caller)" "[string] [substring to check]"
+  fi
+  return $__STRING_DOES_CONTAIN__
+}

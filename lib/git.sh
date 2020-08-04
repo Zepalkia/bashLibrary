@@ -85,7 +85,18 @@ function git_changeBranch() {
       fi
     fi
   else
-    bashlib_abort "$(caller)" "[array of branches] [force checkout]"
+    bashlib_abort "$(caller)" "[target branch] [force checkout]"
   fi
   return $__BRANCH_CHANGE_SUCCESS__
+}
+
+# This function resets the currently cached credentials by git
+# Note:
+#   To erase all trace of the credentials entered by the user during the script execution, this function has to be called from inside the git directory of the
+#   project, otherwise it will not remove everything
+function git_resetCredentials() {
+  git credential-cache exit
+  if [[ -f ".git-credential-cache" ]]; then
+    rm -rf .git-credential-cache &>/dev/null
+  fi
 }

@@ -8,51 +8,49 @@ source lib/string.sh &>/dev/null
 source lib/utilities.sh
 source lib/system.sh
 source lib/lockable.sh
+source lib/options.sh &>/dev/null
 source lib/ui.sh &>/dev/null
-if lockable_globalTryLock 2; then
+
+function __EXIT__() {
+  if [[ $1 -ne 0 ]]; then
+    echo "Error while generating the library file in function ${FUNCNAME[2]}, the script exited with following result: $2 (errno $1)"
+  fi
+  rm -r ".temp/" &>/dev/null
+  lockable_namedUnlock "ABlock"
+  exit $1
+}
+
+bashlib_declareErrno EXIT_SUCCESS 0 "Success"
+bashlib_declareErrno EXIT_FAILURE 1 "Failure"
+bashlib_declareErrno EXIT_LOCKED 2 "Process already ongoing"
+if lockable_namedTryLock "ABlock" 2; then
+  version=0.0.3
   comment=true
-  smart=()
   stopOnFailure=false
   testing=false
   functions=$(grep -oE "function [a-z]+_[a-zA-Z]+" lib/* | awk '{print $2}')
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-      -h|--help)
-        string_echoRich "This script will generates the full 'bashLibrary.sh' script, ready to be sourced with all the required and compatible components in a single file.
-The following options can be used:
-  **--no-comment**
-    The bashLibrary.sh file will not contain any comment or documentation
-  **--stop**
-  Will stop in case of any failure during shellcheck validation
-  **--test**
-  Will run the unit tests at the end of the process
-  **--smart**
-  Will generate a subset of the full library containing only required functions and without comments or additional content"
-        lockable_globalUnlock
-        exit 0;;
-      --no-comment)
-        comment=false;;
-      --stop)
-        stopOnFailure=true;;
-      --test)
-        testing=true;;
-      --smart)
-        shift
-        while [[ $# -gt 0 ]] && [[ $1 != -* ]]; do
-          smart+=($1)
-          shift
-        done
-        if [[ ${#smart[@]} -eq 0 ]]; then
-          string_echoRich "*~rError:~* --smart option expects files to scan that will use the library"
-          exit 0
-          lockable_globalUnlock
-        fi
-        comment=false
-        ;;
-    esac
-    shift
-  done
-  version=0.0.1
+  declare -A userOptions
+  options_init "Bash library generator" "A small tool to generate a single .sh script containing the full bash library" ""
+  options_insert "-h" "Displays this help page" "--help"
+  options_insert "--no-comment" "The bashLibrary.sh file will not contain any comment or documentation"
+  options_insert "--stop" "The generation of the library file will stop in case of failure during shellcheck validation"
+  options_insert "--test" "Unit tests will be run at the end of the generation process"
+  if [[ $# -gt 0 ]]; then
+    if ! options_parse userOptions $*; then
+      ui_showMessage err "Unexpected option ${userOptions[0]} found"
+      EXIT_FAILURE
+    fi
+    for option in "${!userOptions[@]}"; do
+      case "$option" in
+        -h|--help)
+          options_display
+          EXIT_SUCCESS;;
+        --stop) stopOnFailure=true;;
+        --test) testing=true;;
+        --no-comment) comment=false;;
+      esac
+    done
+  fi
   library="bashLibrary.sh"
   mkdir ".temp"
   for file in lib/*; do
@@ -129,12 +127,6 @@ The following options can be used:
             if [[ $comment == false ]] && [[ $line == \#* ]]; then
               continue;
             fi
-            if [[ ${#smart[@]} -gt 0 ]] && [[ $line == function* ]]; then
-              funcName=$(echo $line | grep -oE "[a-z]+_[a-zA-Z]+")
-              if [[ $(grep "$funcName" ${smart[@]} | wc -l) -eq 0 ]]; then
-                scope=true
-              fi
-            fi
             [[ $scope == false ]] && [[ ${#line} -gt 0 ]] && echo -e "$line" >> ".temp/$temporaryName"
           fi
         fi
@@ -149,7 +141,7 @@ The following options can be used:
         ls ".temp/"
         shellcheck ".temp/$temporaryName"
         rm -r ".temp"
-        lockable_globalUnlock
+        lockable_namedUnlock "ABlock"
         exit 0
       else
         string_echoRich "-- Shellcheck *~yfailed~*"
@@ -176,7 +168,7 @@ EOF
       string_echoRich "-- Shellcheck *~rfailed~*"
       shellcheck "$library"
       rm -r ".temp"
-      lockable_globalUnlock
+      lockable_namedLock "ABlock"
       exit 0
     else
       string_echoRich "-- Shellcheck *~yfailed~*"
@@ -184,8 +176,6 @@ EOF
   else
     string_echoRich "-- Shellcheck *~gsuccess~*"
   fi
-  lockable_globalUnlock
-  rmdir ".temp"
   if [[ $testing == true ]]; then
     cd "tests"
     for file in *; do
@@ -193,6 +183,7 @@ EOF
     done
     cd - &>/dev/null
   fi
+  EXIT_SUCCESS
 else
-  echo "Process already running !"
+  EXIT_LOCKED
 fi

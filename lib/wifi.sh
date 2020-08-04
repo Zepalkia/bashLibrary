@@ -1,4 +1,4 @@
-#@DEPENDENCIES: network-manager, isc-dhcp-server, iptables
+#@DEPENDENCIES: network-manager, isc-dhcp-server, iptables, aircrack-ng
 source string.sh
 
 # This function performs a scan of the wifi to retrieve the available networks (only their SSID)
@@ -49,6 +49,8 @@ function wifi_macAddress() {
 # Example:
 #   sudo -s
 #   wifi_setupDHCP 60.0.0.0 255.255.255.0 60.0.0.100 60.0.0.200 60.0.0.1
+# Note:
+#   Here by default the DHCP server will provide global google DNS, if you want to use another one you'll need to change this value
 #@DEPENDS: isc-dhcp-server
 function wifi_setupDHCP() {
   if [[ $# -eq 5 ]]; then
@@ -63,11 +65,11 @@ log-facility local7;
 subnet $1 netmask $2 {
   authoritative;
   range $3 $4;
-  option routes $5;
   option subnet-mask $2;
   option broadcast-address $bcastIP;
-  option domain-name-servers $5 8.8.8.8;
-};
+  option routers $5;
+  option domain-name-servers 8.8.8.8;
+}
 EOF
     else
       bashlib_abort "$(caller)" "must be launched as root"
@@ -108,7 +110,7 @@ function wifi_createHotspot() {
         dhclient -r "$interface"
         pkill -f "dhclient $interface"
         service isc-dhcp-server stop &>/dev/null
-        ifconfig "$interface" "$hotspotIp" &>/dev/null
+        ifconfig "$interface" "$hotspotIp" netmask 255.255.255.0 &>/dev/null
         service isc-dhcp-server start &>/dev/null
       fi
     else
@@ -119,7 +121,41 @@ function wifi_createHotspot() {
   fi
 }
 
-#@DEPENDS iptables
-function wifi_shareInternet() {
+
+function wifi_startMonitorHotspot() {
   true
 }
+
+function wifi_stopMonitorHotspot() {
+  true
+}
+
+# This function stops the hotspot launched by the wifi_createHotspot function, depending on the OS the system will automatically re-connect itself to the last
+# valid connection if any is availabel
+#@DEPENDS: network-manager
+function wifi_stopHotspot() {
+  wifi_stopMonitorHotspot
+  nmcli con del "hotspot" &>/dev/null
+}
+
+# This function starts the connection sharing between 2 interfaces (e.g. wifi to ethernet), the first one needs to be connected to the internet
+# arg0: The name of the interface sharing the connection (e.g. wlan0)
+# arg1: The name of the interface that will transmit the connection (e.g. eth0)
+# Note:
+#  Any external computer plugged into the second interface (either WiFi hotspot or Ethernet connection) will be able to grab the connection given by the main
+#  interface. Be aware than this computer could need to specify the route and/or grab an IP address depending on your situation, this sharing will only work if
+#  all the other settings are fine as well
+#@DEPENDS iptables
+function wifi_shareInternet() {
+  if [[ $# -eq 2 ]]; then
+    sudo iptables -F
+    sudo iptables -t nat -F
+    echo "1" | sudo tee /proc/sys/net/ipv4/ip_forward >/dev/null
+    sudo iptables -A FORWARD -i "$2" -o "$1" -j ACCEPT
+    sudo iptables -A FORWARD -i "$1" -o "$2" -m state --state RELATED,ESTABLISHED -j ACCEPT
+    sudo iptables -t nat -A POSTROUTING -o "$1" -j MASQUERADE
+  else
+    bashlib_abort "$(caller)" "[connected interface] [sharing interface]"
+  fi
+}
+
