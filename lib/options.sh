@@ -94,7 +94,7 @@ function options_display() {
 # (key = option name, value = argument), see the example for more info
 function options_parse() {
   local __PARSING_SUCCESS__=1
-  if [[ $# -gt 1 ]] && [[ $(declare -p 2>/dev/null | grep "$1" | grep -o "\-A") ]]; then
+  if [[ $# -gt 1 ]] && declare -p 2>/dev/null | grep "$1" | grep -qo "\-A"; then
     local -n __OPTION_PARSING_RESULT__=$1
     local currentOption=""
     local char=""
@@ -114,6 +114,8 @@ function options_parse() {
             string_charAt "$1" "$index" char
             if [[ "$char" == "-" ]]; then
               __PARSING_SUCCESS__=1
+              # shellcheck disable=SC2178
+              # The joy of languages that are not strongly typed.. yes I'm using this variable as an array or a string, it's ugly but handy
               __OPTION_PARSING_RESULT__="$1"
               break
             fi
@@ -122,6 +124,8 @@ function options_parse() {
               __OPTION_PARSING_RESULT__["$currentOption"]=""
             else
               __PARSING_SUCCESS__=1
+              # shellcheck disable=SC2178
+              # The joy of languages that are not strongly typed.. yes I'm using this variable as an array or a string, it's ugly but handy
               __OPTION_PARSING_RESULT__="$char"
               break
             fi
@@ -129,6 +133,8 @@ function options_parse() {
         fi
       else
         if [[ "$currentOption" == "" ]]; then
+          # shellcheck disable=SC2178
+          # The joy of languages that are not strongly typed.. yes I'm using this variable as an array or a string, it's ugly but handy
           __OPTION_PARSING_RESULT__="$1"
           __PARSING_SUCCESS__=1
         else
@@ -161,7 +167,7 @@ function options_getHelp() {
       option="${__BL_ALIASES__["$option"]}"
     fi
     if [[ ${__BL_ARGUMENTS__["$option"]} ]]; then
-      __BL_HELP_OPTION__=$(echo ${__BL_ARGUMENTS__["$option"]} | grep -o "\.RS.*\.RE")
+      __BL_HELP_OPTION__=$(echo "${__BL_ARGUMENTS__["$option"]}" | grep -o "\.RS.*\.RE")
       __BL_HELP_OPTION__=${__BL_HELP_OPTION__:3:$((${#__BL_HELP_OPTION__} - 6))}
     fi
   else

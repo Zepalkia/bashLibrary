@@ -150,7 +150,7 @@ function wifi_shareInternet() {
   if [[ $# -eq 2 ]]; then
     sudo iptables -F
     sudo iptables -t nat -F
-    sudo echo "1" > /proc/sys/net/ipv4/ip_forward
+    echo "1" | sudo tee /proc/sys/net/ipv4/ip_forward >/dev/null
     sudo iptables -A FORWARD -i "$2" -o "$1" -j ACCEPT
     sudo iptables -A FORWARD -i "$1" -o "$2" -m state --state RELATED,ESTABLISHED -j ACCEPT
     sudo iptables -t nat -A POSTROUTING -o "$1" -j MASQUERADE

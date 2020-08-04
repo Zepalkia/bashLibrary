@@ -241,6 +241,14 @@ function string_echoPosition() {
   fi
 }
 
+# This function checks if a given string contains a given substring
+# arg0: The main string to check
+# arg1: The substring we are looking for
+# return: 0 if arg1 is present inside arg0, 1 otherwise
+# Example:
+#   if string_contains "Hello World !" "orl"; then
+#     echo "Success !"
+#   fi
 function string_contains() {
   local __STRING_DOES_CONTAIN__=1
   if [[ $# -eq 2 ]]; then

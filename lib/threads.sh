@@ -214,6 +214,8 @@ function threads_injectFunction() {
   local __THREAD_INJECTION_SUCCESS__=1
   if [[ $# -eq 2 ]]; then
     if [[ "$(type -t "$2")" == "function" ]] && [[ -f "/tmp/.$1" ]]; then
+      # shellcheck disable=SC2005
+      # This 'echo' is required here to print the data we want (the body of the declared function)
       cat <(echo "$(declare -f "$2")") "/tmp/.$1" > "/tmp/.$1_2"
       mv "/tmp/.$1_2" "/tmp/.$1"
       __THREAD_INJECTION_SUCCESS__=0

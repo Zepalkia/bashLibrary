@@ -16,15 +16,15 @@ function __EXIT__() {
     echo "Error while generating the library file in function ${FUNCNAME[2]}, the script exited with following result: $2 (errno $1)"
   fi
   rm -r ".temp/" &>/dev/null
-  lockable_globalUnlock
+  lockable_namedUnlock "ABlock"
   exit $1
 }
 
 bashlib_declareErrno EXIT_SUCCESS 0 "Success"
 bashlib_declareErrno EXIT_FAILURE 1 "Failure"
 bashlib_declareErrno EXIT_LOCKED 2 "Process already ongoing"
-if lockable_globalTryLock 2; then
-  version=0.0.2
+if lockable_namedTryLock "ABlock" 2; then
+  version=0.0.3
   comment=true
   stopOnFailure=false
   testing=false
@@ -141,7 +141,7 @@ if lockable_globalTryLock 2; then
         ls ".temp/"
         shellcheck ".temp/$temporaryName"
         rm -r ".temp"
-        lockable_globalUnlock
+        lockable_namedUnlock "ABlock"
         exit 0
       else
         string_echoRich "-- Shellcheck *~yfailed~*"
@@ -168,7 +168,7 @@ EOF
       string_echoRich "-- Shellcheck *~rfailed~*"
       shellcheck "$library"
       rm -r ".temp"
-      lockable_globalUnlock
+      lockable_namedLock "ABlock"
       exit 0
     else
       string_echoRich "-- Shellcheck *~yfailed~*"

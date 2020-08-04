@@ -46,8 +46,8 @@ function xml_load() {
           node=$(echo "$line" | grep -oE "<[^ />]*\>")
           node="${node//</}"
           value=$(echo "$line" | grep -oE ">.*<")
-          value=$(echo ${value:1:$((${#value} - 2))})
-          xpath="${parents[@]} $node"
+          value=${value:1:$((${#value} - 2))}
+          xpath="${parents[*]} $node"
           if [[ "$value" == "" ]] && [[ ! "$line" =~ /\>$ ]]; then
             parents+=("$node")
           fi

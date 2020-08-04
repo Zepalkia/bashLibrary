@@ -63,6 +63,20 @@ function testing_assertEqual() {
   fi
   return $result
 }
+
+function testing_assertGT() {
+  local result=1
+  local v1="$1"
+  local v2="$2"
+  [[ "$v1" =~ \$ ]] && eval "v1=$v1"
+  [[ "$v2" =~ \$ ]] && eval "v2=$v2"
+  if [[ $v1 -gt $v2 ]]; then
+    result=0
+  else
+    __BL_FAILURE_REASON__="$v1 <= $v2"
+  fi
+  return $result
+}
 # ************************************************************************************************************************************************************
 
 # This function will perform a list of tests on a given user-defined function and will output any error during the process

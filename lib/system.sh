@@ -152,9 +152,9 @@ function system_clearSwap() {
 # Note:
 #   The process will catch any output and write it inside the /tmp/.dump file in case it's required to check some output data
 function system_asRoot() {
-  if [[ $# -ge 2 ]] && [[ "$(type -t $1)" == "function" ]]; then
+  if [[ $# -ge 2 ]] && [[ "$(type -t "$1")" == "function" ]]; then
     local -n __AS_ROOT_RESULT__=$2
-    sudo bash -c "$(declare -f $1); $1 $3 &>/tmp/.dump"
+    sudo bash -c "$(declare -f "$1"); $1 $3 &>/tmp/.dump"
     __AS_ROOT_RESULT__=$?
   else
     bashlib_abort "$(caller)" "[function name] [&result] {arguments}"
