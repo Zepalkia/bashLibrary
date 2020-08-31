@@ -260,3 +260,25 @@ function string_contains() {
   fi
   return $__STRING_DOES_CONTAIN__
 }
+
+# This function fixes the size of a given string to a specific width value, truncating it if it's bigger or padding it with spaces if it's not
+# arg0: The name of the variable that contains the string we want to fix the size
+# arg1: The size to apply to the string
+# Example:
+#  str="012345"
+#  string_fixSize str 2
+#  echo "1 in 2-bit binary is: $str"
+function string_fixSize() {
+  if [[ $# -eq 2 ]]; then
+    local -n __FIXED_SIZE_STRING__=$1
+    local padding=""
+    if [[ ${#__FIXED_SIZE_STRING__} -gt $2 ]]; then
+      __FIXED_SIZE_STRING__=${__FIXED_SIZE_STRING__:0:$2}
+    else
+      padding=$(printf "%-$(($2 - ${#__FIXED_SIZE_STRING__}))s" "=")
+      __FIXED_SIZE_STRING__="${__FIXED_SIZE_STRING__}${padding//=/ }"
+    fi
+  else
+    bashlib_abort "$(caller)" "[&string] [targetSize]"
+  fi
+}

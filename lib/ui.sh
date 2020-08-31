@@ -8,12 +8,14 @@ source lockable.sh
 
 # This function shows formated message to display status to the user
 # arg0: The level of the message
-# arg1: THe message to display
+# arg1: The message to display
 # The following levels are valid:
 #   'emg' or 'emergency' -> red blinking
 #   'err' or 'error' -> red
 #   'war' or 'warning' -> yellow
 #   'inf' or 'info' -> green
+# Note:
+#   To display the same message in a graphical window, please check the 'gui_showMessage' function
 function ui_showMessage() {
   if [[ $# -eq 2 ]]; then
     case "$1" in
@@ -163,7 +165,7 @@ function ui_echoWindow() {
 # arg2: The width of the window
 # arg3: The message to dislay inside the window
 # arg4: A boolean telling if we want to use the secondary screen to display only the window without breaking the current terminal content or not
-# arg5: The name of the variables that will contain the answer of the user
+# arg5: The name of the variable that will contain the answer of the user
 function ui_confirmWindow() {
   if [[ $# -eq 6 ]]; then
     local -n __CONFIRMED_VALUE__=$6
@@ -295,7 +297,7 @@ function ui_booleanMenu() {
       optionMsg=()
     fi
     local columnSizes=(0) choices=() rowCol=()
-    local topRow=0 maxRow=0 maxCol=0 xShift=0 row=0 col=0 size=0 xPos=0 count=0 posX=0 posY=0 width=0
+    local topRow=0 maxRow=0 maxCol=0 xShift=0 row=0 col=0 size=0 xPos=0 count=0 posX=0 posY=0 width=0 temporaryValue=0
     local space="" value="" key="" eventValue="" eventType=""
     terminal_getCursorLine topRow
     row=$topRow
@@ -308,7 +310,8 @@ function ui_booleanMenu() {
       optionState[$key]=${__BOOL_MENU_STATE__[$count]}
       idMap[$key]=$count
       choiceMap[$key]=${optionMsg[$count]}
-      math_max "${columnSizes[$col]}" "${#value}" columnSizes[$col]
+      math_max "${columnSizes[$col]}" "${#value}" temporaryValue
+      columnSizes[$col]=$temporaryValue
       row=$((++row))
       count=$((++count))
       if [[ $row -ge $maxRow ]]; then

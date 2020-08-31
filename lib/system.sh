@@ -160,3 +160,19 @@ function system_asRoot() {
     bashlib_abort "$(caller)" "[function name] [&result] {arguments}"
   fi
 }
+
+# This function returns the number of cores fully in used by the system
+# arg0: The name of the variable that will contain the result value
+# Note:
+#   The result is obviously an approximation done in a single snapshot of the system, moreover it only takes into account 1 core = 100% without ceiling the
+#   percentage value, to be used only to have a global view of the processor status at time T (e.g. if you want to know how much cores are free to be used by
+#   a background process)
+function system_coresInUse() {
+  if [[ $# -eq 1 ]]; then
+    local -n __CORES_IN_USE__=$1
+    local percentage=$(top -b -n 1 | head -20 | awk '{print $9}' | tail -13 | paste -sd+ | bc)
+    __CORES_IN_USE__=$((${percentage%.*} / 100))
+  else
+    bashlib_abort "$(caller)" "[&result]"
+  fi
+}
