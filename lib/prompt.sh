@@ -1,4 +1,6 @@
 source variables.sh
+source string.sh
+source terminal.sh
 
 # This function shows a prompt to the user that contains a default value that will be selected if the user doesn't enter anything
 # arg0: The default value returned by the function and shown to the user if no other value is entered
@@ -75,4 +77,93 @@ function prompt_confirmation() {
   fi
 }
 
-# tab completion ?
+# This function creates a prompt with auto-completion capabilities, it will display up to 10 completion choices that can be navigated with the arrow keys and
+# completed with the TAB key (ENTER will validate the input)
+# arg0: The name of the variable (array) containing the list of available completions
+# arg1: The name of the variable that will contain the input from the user
+function prompt_readWithCompletion() {
+  if [[ $# -eq 2 ]]; then
+    local -n argArray=$1
+    local -n __READ_WITH_COMPLETION__=$2
+    local flatArray="${argArray[*]}"
+    local nOptions=${#argArray[@]}
+    local value=""
+    local eventType=""
+    local completionList=""
+    local temporaryValue=""
+    local line=0
+    local count=0
+    # The max width of a line, any completion value bigger than this will be truncated
+    local maxWidth=20
+    local countLine=0
+    local selectedLine=0
+    local completeArray=()
+    local looping=true
+    __READ_WITH_COMPLETION__=""
+    terminal_getCursorLine line
+    line=$((++line))
+    echo -n "> "
+    while [[ $looping == true ]]; do
+      terminal_readEvent value eventType
+      case "$eventType" in
+        key)
+          __READ_WITH_COMPLETION__="$__READ_WITH_COMPLETION__$value"
+          ;;
+        special)
+          if [[ "$value" == "back" ]]; then
+            __READ_WITH_COMPLETION__=${__READ_WITH_COMPLETION__%?}
+          elif [[ "$value" == "tab" ]]; then
+            __READ_WITH_COMPLETION__="${completeArray[$selectedLine]}"
+          fi
+          ;;
+        arrow)
+          if [[ "$value" == "UP" ]] && [[ $selectedLine -gt 0 ]]; then
+            selectedLine=$((--selectedLine))
+          elif [[ "$value" == "DOWN" ]] && [[ $selectedLine -lt $((${#completeArray[@]} - 1)) ]]; then
+            selectedLine=$((++selectedLine))
+          fi
+          ;;
+        validation) looping=false;;
+      esac
+      if [[ $looping == true ]]; then
+        completionList=""
+        #shellcheck disable=SC2207 disable=SC1087 disable=SC2046 disable=SC2005
+        #TODO: Cross-check this ugly double-echo resolving
+        completeArray=($(echo $(echo "$flatArray" | grep -oE "[[:graph:]]*$__READ_WITH_COMPLETION__[[:graph:]]*")))
+        if [[ $selectedLine -gt ${#completeArray[@]} ]]; then
+          selectedLine=$((${#completeArray[@]} - 1))
+        fi
+        temporaryValue=" ${#completeArray[@]}/$nOptions"
+        string_fixSize temporaryValue $maxWidth
+        completionList="$completionList\n$temporaryValue"
+        countLine=$((line + 2))
+        count=0
+        while [[ $countLine -lt $(tput lines) ]] && [[ $count -lt 10 ]] && [[ $count -lt ${#completeArray[@]} ]]; do
+          if [[ $count -eq $selectedLine ]]; then
+            temporaryValue="| ${completeArray[$count]}"
+          else
+            temporaryValue="${completeArray[$count]}"
+          fi
+          string_fixSize temporaryValue $maxWidth
+          completionList="$completionList\n$temporaryValue"
+          count=$((++count))
+          countLine=$((++countLine))
+        done
+        while [[ $countLine -lt $(tput lines) ]] && [[ $count -lt 10 ]]; do
+          temporaryValue=""
+          string_fixSize temporaryValue $maxWidth
+          completionList="$completionList\n$temporaryValue"
+          count=$((++count))
+          countLine=$((++countLine))
+        done
+        echo -e "$completionList"
+        tput cup "$line" 0
+        echo -n "> $__READ_WITH_COMPLETION__"
+        tput el
+      fi
+    done
+    echo ""
+  else
+    bashlib_abort "$(caller)" "[array of options] [&result]"
+  fi
+}

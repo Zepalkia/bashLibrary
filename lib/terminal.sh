@@ -129,6 +129,8 @@ function terminal_readArrowKey() {
 #     An arrow key has been used, the 'value' will contain the direction (UP, DOWN, LEFT or RIGHT)
 # - validation:
 #     The 'enter' or 'space' key is pressed, the 'value' will not contain anything
+# - special:
+#     Any of these special key: "tab", "back"
 # - key:
 #     Any other keyboard key has been pressed, the 'value' will contain the char that has been entered
 function terminal_readEvent() {
@@ -137,13 +139,17 @@ function terminal_readEvent() {
     local input=""
     local -n __READ_EVENT__=$1
     local -n __TYPE_EVENT__=$2
+    local oldIFS=$IFS
+    IFS=""
     escape=$(printf "\u1b")
     stty -echo
     echo -en "\e[?1000;1006;1015h"
     read -rsn 1 input
     echo -en "\e[?1000;1006;1015l"
     stty echo
-    if [[ "$input" == "$escape" ]]; then
+    #shellcheck disable=SC2254
+    case "$input" in
+      $escape)
       read -rsn 2 input
       __TYPE_EVENT__="arrow"
       case "$input" in
@@ -157,14 +163,23 @@ function terminal_readEvent() {
           string_tokenize "$input" ";" input
           __READ_EVENT__="${input[0]};${input[1]};${input[2]//M/}"
           ;;
-      esac
-    elif [[ "$input" == "" ]]; then
-      __TYPE_EVENT__="validation"
-    else
-      __READ_EVENT__="$input"
-      __TYPE_EVENT__="key"
-    fi
+      esac;;
+      $'\x09')
+        __READ_EVENT__="tab"
+        __TYPE_EVENT__="special"
+        ;;
+      $'\x7f')
+        __READ_EVENT__="back"
+        __TYPE_EVENT__="special"
+        ;;
+      "")
+        __TYPE_EVENT__="validation";;
+      *)
+        __READ_EVENT__="$input"
+        __TYPE_EVENT__="key";;
+    esac
+    IFS=$oldIFS
   else
-    false
+    bashlib_abort "$(caller)" "[&result0 (value)] [&result1 (type)]"
   fi
 }

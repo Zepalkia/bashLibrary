@@ -65,3 +65,19 @@ function array_argmin() {
   fi
 }
 
+# This function inserts a new element into an array at a specific position
+# arg0: The name of the variable containing the array to modify
+# arg1: The position in which to add the new element (0-based)
+# arg2: The element to add into the array
+function array_insert() {
+  if [[ $# -eq 3 ]]; then
+    local -n __ARRAY_WITH_INSERTION__=$1
+    if [[ $2 -ge ${#__ARRAY_WITH_INSERTION__[@]} ]]; then
+      __ARRAY_WITH_INSERTION__+=("$3")
+    else
+      __ARRAY_WITH_INSERTION__=("${__ARRAY_WITH_INSERTION__[@]:0:$2}" "$3" "${__ARRAY_WITH_INSERTION__[@]:$2}")
+    fi
+  else
+    bashlib_abort "$(caller)" "[&array] [position] [element]"
+  fi
+}

@@ -167,7 +167,7 @@ function options_getHelp() {
       option="${__BL_ALIASES__["$option"]}"
     fi
     if [[ ${__BL_ARGUMENTS__["$option"]} ]]; then
-      __BL_HELP_OPTION__=$(echo "${__BL_ARGUMENTS__["$option"]}" | grep -o "\.RS.*\.RE")
+      __BL_HELP_OPTION__=$(echo "${__BL_ARGUMENTS__["$option"]}" | tr -d '\n' | grep -o "\.RS.*\.RE")
       __BL_HELP_OPTION__=${__BL_HELP_OPTION__:3:$((${#__BL_HELP_OPTION__} - 6))}
     fi
   else
