@@ -24,7 +24,7 @@ bashlib_declareErrno EXIT_SUCCESS 0 "Success"
 bashlib_declareErrno EXIT_FAILURE 1 "Failure"
 bashlib_declareErrno EXIT_LOCKED 2 "Process already ongoing"
 if lockable_namedTryLock "ABlock" 2; then
-  version=0.0.4
+  version=0.0.5
   comment=true
   stopOnFailure=false
   testing=false
