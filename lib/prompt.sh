@@ -85,7 +85,7 @@ function prompt_readWithCompletion() {
   if [[ $# -eq 2 ]]; then
     local -n argArray=$1
     local -n __READ_WITH_COMPLETION__=$2
-    local flatArray="${argArray[@]}"
+    local flatArray="${argArray[*]}"
     local nOptions=${#argArray[@]}
     local value=""
     local eventType=""
@@ -127,6 +127,8 @@ function prompt_readWithCompletion() {
       esac
       if [[ $looping == true ]]; then
         completionList=""
+        #shellcheck disable=SC2207 disable=SC1087 disable=SC2046 disable=SC2005
+        #TODO: Cross-check this ugly double-echo resolving
         completeArray=($(echo $(echo "$flatArray" | grep -oE "[[:graph:]]*$__READ_WITH_COMPLETION__[[:graph:]]*")))
         if [[ $selectedLine -gt ${#completeArray[@]} ]]; then
           selectedLine=$((${#completeArray[@]} - 1))

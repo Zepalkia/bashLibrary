@@ -147,6 +147,7 @@ function terminal_readEvent() {
     read -rsn 1 input
     echo -en "\e[?1000;1006;1015l"
     stty echo
+    #shellcheck disable=SC2254
     case "$input" in
       $escape)
       read -rsn 2 input

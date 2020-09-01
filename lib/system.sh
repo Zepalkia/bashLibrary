@@ -170,7 +170,8 @@ function system_asRoot() {
 function system_coresInUse() {
   if [[ $# -eq 1 ]]; then
     local -n __CORES_IN_USE__=$1
-    local percentage=$(top -b -n 1 | head -20 | awk '{print $9}' | tail -13 | paste -sd+ | bc)
+    local percentage=0
+    percentage=$(top -b -n 1 | head -20 | awk '{print $9}' | tail -13 | paste -sd+ | bc)
     __CORES_IN_USE__=$((${percentage%.*} / 100))
   else
     bashlib_abort "$(caller)" "[&result]"
