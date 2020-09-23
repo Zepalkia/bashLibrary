@@ -24,7 +24,7 @@ bashlib_declareErrno EXIT_SUCCESS 0 "Success"
 bashlib_declareErrno EXIT_FAILURE 1 "Failure"
 bashlib_declareErrno EXIT_LOCKED 2 "Process already ongoing"
 if lockable_namedTryLock "ABlock" 2; then
-  version=0.0.5
+  version=0.0.7
   comment=true
   stopOnFailure=false
   testing=false
@@ -52,6 +52,7 @@ if lockable_namedTryLock "ABlock" 2; then
     done
   fi
   library="bashLibrary.sh"
+  compressedLibrary="bashLibrary.small.sh"
   mkdir ".temp"
   for file in lib/*; do
     tokens=()
@@ -162,6 +163,7 @@ EOF
     [[ ! $component =~ variables ]] && cat "$component" >> "$library"
     rm "$component"
   done
+  cat "$library" | grep -vE "^#.*" | gzip | base64 -w0 > "$compressedLibrary"
   shellcheck "$library" &>/dev/null
   if [[ $? -ne 0 ]]; then
     if [[ $stopOnFailure == true ]]; then

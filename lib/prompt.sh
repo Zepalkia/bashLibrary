@@ -1,3 +1,4 @@
+source threads.sh
 source variables.sh
 source string.sh
 source terminal.sh

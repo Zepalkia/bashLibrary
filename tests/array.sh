@@ -23,3 +23,16 @@ assertEqual \$argmin 6
 assertExit array_argmin 1
 assertExit array_argmin 1 too many random arguments
 TEST
+
+array=(1 2 3)
+testing_testCase "Array insertion" << TEST
+assertEqual \${#array[@]} 3
+assertSuccess array_insert array 0 0
+assertEqual \${#array[@]} 4
+assertEqual \${array[0]} 0
+assertSuccess array_insert array 2 "A"
+assertEqual \${#array[@]} 5
+assertEqual \${array[2]} A
+assertExit array_insert 1
+assertExit array_insert too many random arguments
+TEST

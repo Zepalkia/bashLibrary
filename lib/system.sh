@@ -149,6 +149,7 @@ function system_clearSwap() {
 # This function launch an already-declared function as root using 'sudo' utility
 # arg0: The name of the function to launch as root
 # arg1: The name of the variable that will contain the value returned by the function
+# arg2: (optional) A string of all the arguments to pass to the function
 # Note:
 #   The process will catch any output and write it inside the /tmp/.dump file in case it's required to check some output data
 function system_asRoot() {

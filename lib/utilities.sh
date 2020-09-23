@@ -54,6 +54,26 @@ function utilities_validateIP() {
   return $__IS_IP_VALID__
 }
 
+# This function checks between two given version number and returns 0 in case the available version is more up-to-date
+# arg0: The current version
+# arg1: The available version
+# return: 0 if arg1 > arg0, 1 otherwise
+# Note:
+#   The 'version' should be a string following 'usual' versioning definition (e.g. main.minor.patch), any other character will be dropped (e.g. 'v' or 'rc')
+function utilities_upgradeRequired() {
+  if [[ $# -eq 2 ]]; then
+    local __IS_UPGRADE_REQUIRED__=1
+    local current="${1//[!0-9]/}"
+    local available="${2//[!0-9]/}"
+    if [[ $available -gt $current ]]; then
+      __IS_UPGRADE_REQUIRED__=0
+    fi
+  else
+    bashlib_abort "$(caller)" "[current version] [available version]"
+  fi
+  return $__IS_UPGRADE_REQUIRED__
+}
+
 # This function uses bc to convert a given number of bytes into a readable string
 # arg0: The number of bytes to convert
 # arg1: The name of the variable that will contain the readable value with unit (string)
