@@ -282,3 +282,21 @@ function string_fixSize() {
     bashlib_abort "$(caller)" "[&string] [targetSize]"
   fi
 }
+
+# This function checks if a given string can be interpreted as a number (with/without decimal values and with/without sign)
+# arg0: The string to check
+# return: 0 if the string is a number, 1 otherwise
+# Note:
+#   An integer or a floating value, with '-' or '+' sign as well, will be accepted as "number", if you don't want to check for floating value and only
+#   bash-compatible value you can just simplify the regex to '^[0-9]+$'
+function string_isNumber() {
+  local __STRING_IS_NUMBER__=1
+  if [[ $# -eq 1 ]]; then
+    if [[ $1 =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
+      __STRING_IS_NUMBER__=0
+    fi
+  else
+    bashlib_abort "$(caller)" "[string]"
+  fi
+  return $__STRING_IS_NUMBER__
+}

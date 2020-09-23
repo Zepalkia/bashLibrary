@@ -3,6 +3,7 @@
 # This function displays a given message followed by a spinner animation as long as a given process is running
 # arg0: The message to display before the spinner
 # arg1: The pid of the process this function should wait for
+# arg2: (optional) A boolean that defines if we want to use 'braille' chars (true) or not (false, default value)
 # Example:
 #   (sleep 20)&
 #   waiting_spinner "Waiting for sleep" $!
@@ -13,20 +14,24 @@
 #   spinner animation will follow the cursor everyhere on the screen. If this is the behaviour you
 #   want, try 'waiting_cursor' instead that does it automatically
 function waiting_spinner() {
-  if [[ $# -eq 2 ]]; then
-    local steps=("|" "/" "─" "\\\\")
-    # For terminals with compatible font, you can use the following 'braille' chars if available to have a
-    # nice-looking spinner instead of the regular ascii chars
-    # steps=("⠄" "⠆" "⠇" "⠋" "⠙" "⠸" "⠴" "⠤")
+  if [[ $# -ge 2 ]]; then
+    local steps=()
+    if [[ $3 == true ]]; then
+      steps=("⠄" "⠆" "⠇" "⠋" "⠙" "⠸" "⠴" "⠤")
+    else
+      steps=("|" "/" "─" "\\\\")
+    fi
     local index=0
     echo -en "$1 "
+    tput civis
     while [[ $(ps -p "$2" | wc -l) -eq 2 ]]; do
       echo -en "${steps[$index]}\b"
       index=$((++index % ${#steps[@]}))
       sleep 0.1
     done
+    tput cvvis
   else
-    bashlib_abort "$(caller)" "${FUNCNAME[0]}" "[message] [pid]"
+    bashlib_abort "$(caller)" "${FUNCNAME[0]}" "[message] [pid] {should use nicer font: boolean}"
   fi
 }
 

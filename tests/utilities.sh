@@ -22,3 +22,14 @@ assertExit utilities_bytesToReadable 1 too many random arguments
 TEST
 cd - &>/dev/null
 rmdir "$file"
+
+testing_testCase "Version comparison" << TEST
+assertSuccess utilities_upgradeRequired 1.0.0 1.0.1
+assertFailure utilities_upgradeRequired 1.0.1 1.0.0
+assertSuccess utilities_upgradeRequired v1.0.0-a 2.0.0
+assertFailure utilities_upgradeRequired 1.10.13 1.9.13
+assertSuccess utilities_upgradeRequired 1.10.13 1.10.14
+assertFailure utilities_upgradeRequired 1.10.14 1.9.15
+assertFailure utilities_upgradeRequired 1.001.1 1.000.2
+assertSuccess utilities_upgradeRequired 1.002.1 1.100.0
+TEST
