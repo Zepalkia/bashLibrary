@@ -32,4 +32,6 @@ assertSuccess utilities_upgradeRequired 1.10.13 1.10.14
 assertFailure utilities_upgradeRequired 1.10.14 1.9.15
 assertFailure utilities_upgradeRequired 1.001.1 1.000.2
 assertSuccess utilities_upgradeRequired 1.002.1 1.100.0
+assertSuccess utilities_upgradeRequired 1.0.0 1.0.0.1
+assertFailure utilities_upgradeRequired 1.0.1 1.0.0.1
 TEST

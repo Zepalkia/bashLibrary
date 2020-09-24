@@ -63,9 +63,16 @@ function utilities_validateIP() {
 function utilities_upgradeRequired() {
   if [[ $# -eq 2 ]]; then
     local __IS_UPGRADE_REQUIRED__=1
-    local current="${1//[!0-9]/}"
-    local available="${2//[!0-9]/}"
-    if [[ $available -gt $current ]]; then
+    local current="$((10#${1//[!0-9]/}))"
+    local available="$((10#${2//[!0-9]/}))"
+    local nCurrent="${1//[!\.]/}"
+    local nAvailable="${2//[!\.]/}"
+    if [[ ${#nCurrent} -lt ${#nAvailable} ]]; then
+      current=$((current * 10 * $((${#nAvailable} - ${#nCurrent}))))
+    elif [[ ${#nAvailable} -lt ${#nCurrent} ]]; then
+      available=$((available * 10 * $((${#nCurrent} - ${#nAvailable}))))
+    fi
+    if [[ $((10#$available)) -gt $((10#$current)) ]]; then
       __IS_UPGRADE_REQUIRED__=0
     fi
   else
