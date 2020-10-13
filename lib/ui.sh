@@ -67,7 +67,7 @@ function ui_echoWindow() {
     tput sc
     local xOrigin=$1
     local yOrigin=$2
-    local message="$4"
+    local lines=()
     local localClear=$5
     [[ $# -eq 6 ]] && local -n __USER_CHOICE__=$6
     local width=0
@@ -78,32 +78,21 @@ function ui_echoWindow() {
     local result=""
     local leftovers=""
     math_min $(($(tput cols) - xOrigin - 3)) "$3" width
+    mapfile -t lines < <(echo "$4" | fold -w "$((width - 3))" -s)
     xRight=$((xOrigin + width - 1 - width % 2))
     box=$(printf "%-$((width / 2 - 1))s" " ")
     tput cup "$yOrigin" "$xOrigin"
     echo "+${box// /=~}+"
     tput cup $((yOrigin + line)) "$xOrigin"
-    for word in $message; do
-      if [[ $nChar -eq 0 ]]; then
-        str="| $word ";
-      else
-        str="$word "
-      fi
-      if [[ $((${#str} + nChar)) -lt $((width - 1)) ]]; then
-        echo -n "$str"
-        nChar=$((${#str} + nChar))
-      else
-        string_substr "$str" 0 $((width - 2 - ${#str} - nChar)) result
-        string_substr "$str" $((width -2 - ${#str} - nChar)) ${#str} leftovers
-        echo -n "$result"
-        tput cup $((yOrigin + line)) "$xRight"
-        echo -n "|"
-        line=$((line + 1))
-        tput cup $((yOrigin + line)) "$xOrigin"
-        echo -n "| $leftovers"
-        nChar=$((3 + ${#leftovers}))
-      fi
+    for message in "${lines[@]}"; do
+      echo -n "| $message"
+      tput cup $((yOrigin + line)) "$xRight"
+      echo -n "|"
+      line=$((line + 1))
+      tput cup $((yOrigin + line)) "$xOrigin"
     done
+    tput cup $((yOrigin + line)) "$xOrigin"
+    echo -n "|"
     tput cup $((yOrigin + line)) "$xRight"
     echo -n "|"
     tput cup $((yOrigin + line + 1)) "$xOrigin"

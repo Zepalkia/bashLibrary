@@ -1,3 +1,4 @@
+#@PRIORITY: 8
 #@DEPENDENCIES: bc
 
 # This function safely changes directory and stops the full execution in case it failed

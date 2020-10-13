@@ -159,3 +159,38 @@ function wifi_shareInternet() {
   fi
 }
 
+# This function retrieves the name of the internal WiFi module of the computer
+# arg0: The name of the variable that will contain the name of the module
+function wifi_getModule() {
+  if [[ $# -eq 1 ]]; then
+    local -n __WIFI_MODULE_NAME__=$1
+    __WIFI_MODULE_NAME__=$(lspci -nnk | grep -iA2 "Wireless" | grep "Kernel modules" | awk '{print $3}')
+  else
+    bashlib_abort "$(caller)" "[&result]"
+  fi
+}
+
+# This function disables completelly the WiFi module of the computer, either until next reboot or permanently
+# arg0: A boolean telling if we want the change to be permanent (true) or not
+# return: 0 if the module has been disabled successfully, 1 otherwise
+# Note:
+#  This function has to be run as root in order to be successful (see 'system_asRoot'), in case your computer is using iwlwifi module it will also require to
+#  disable the 'iwlmvm' module before
+function wifi_disableWifiModule() {
+  if [[ $# -eq 1 ]]; then
+    local __MODULE_DISABLED__=1
+    local module=""
+    wifi_getModule module
+    if [[ "$module" != "" ]]; then
+      if modprobe -r "$module" &>/dev/null; then
+        if [[ "$1" == true ]]; then
+          echo "blacklist $module" >> /etc/modprobe.d/blacklist-wifi.conf
+        fi
+        __MODULE_DISABLED__=0
+      fi
+    fi
+  else
+    bashlib_abort "$(caller)" "[disable permanently (boolean)]"
+  fi
+  return $__MODULE_DISABLED__
+}
