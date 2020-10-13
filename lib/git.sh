@@ -123,10 +123,12 @@ function git_resetCredentials() {
 function git_changeBranches() {
   local __BRANCH_CHANGE_SUCCESS__=0
   if [[ $# -eq 3 ]]; then
+    local targetBranch=""
+    local targetGitFolder=""
     local -n targetBranchArray="$1"
     local -n targetFolderArray="$3"
     for targetGitFolder in "${targetFolderArray[@]}"; do
-      if [[ -f "$targetGitFolder" ]]; then
+      if [[ -d "$targetGitFolder" ]]; then
         utilities_safeCD "$targetGitFolder"
         git fetch &>/dev/null
         __BRANCH_CHANGE_SUCCESS__=1
