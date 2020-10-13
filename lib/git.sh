@@ -1,4 +1,5 @@
 #@DEPENDENCIES: git
+source utilities.sh
 
 # This function checks if a given branch name exists, this 'branch' can be a head, a tag or a remote branch
 # arg0: The name of the branch we're looking for
@@ -100,3 +101,55 @@ function git_resetCredentials() {
     rm -rf .git-credential-cache &>/dev/null
   fi
 }
+
+# This function change the branch of a list of git projects to a specific one (can specify multiple ones)
+# arg0: The name of the variable (array) that contains the target branches, for each projects, the first one available from the array will be used (will fail if none is available)
+# arg1: A boolean telling if we want to revert the branch to a pristine status before changing (true) or not (false)
+# arg2: The name of the variable (array) that contains all the folder to use, they have to exist and the path have to be accessible from the current folder
+# return: 0 in case of success,
+#         1 if no branch exists for a project
+#         2 if a checkout failed because of conflicts
+#         3 if a project folder doesn't exists
+# Note:
+#   Be very careful than giving 'true' as arg1 to this function will reset ALL local changes, including new files, new directories, staged changes etc.., you
+#   should call for a 'stash' before in case you want to keep them or resolve the conflicts manually before changing branch
+# Example:
+#   branches=(dev0 dev1 test0 master)
+#   folders=("./devFolder" "./testFolder" "./libFolder")
+#   if git_changeBranches branches true folders; then
+#     echo "Success !"
+#   fi
+#@DEPENDS: git
+function git_changeBranches() {
+  local __BRANCH_CHANGE_SUCCESS__=0
+  if [[ $# -eq 3 ]]; then
+    local -n targetBranchArray="$1"
+    local -n targetFolderArray="$3"
+    for targetGitFolder in "${targetFolderArray[@]}"; do
+      if [[ -f "$targetGitFolder" ]]; then
+        utilities_safeCD "$targetGitFolder"
+        git fetch &>/dev/null
+        __BRANCH_CHANGE_SUCCESS__=1
+        for targetBranch in "${targetBranchArray[@]}"; do
+          if git_branchExists "$targetBranch"; then
+            __BRANCH_CHANGE_SUCCESS__=2
+            if git_changeBranch "$targetBranch" "$2"; then
+              __BRANCH_CHANGE_SUCCESS__=0
+            fi
+            break
+          fi
+        done
+        utilities_safeCD "-"
+      else
+        __BRANCH_CHANGE_SUCCESS__=3
+      fi
+      if [[ $__BRANCH_CHANGE_SUCCESS__ -ne 0 ]]; then
+        break
+      fi
+    done
+  else
+    bashlib_abort "$(caller)" "[array of target branch] [force checkout] [array of path to git folders]"
+  fi
+  return $__BRANCH_CHANGE_SUCCESS__
+}
+
