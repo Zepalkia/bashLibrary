@@ -1,4 +1,4 @@
-#@PRIORITY: 1
+#@PRIORITY: 2
 
 # This function opens a file descriptor pointing to the logfile path
 # arg0: The path to the logfile (will not be erased but appended)
@@ -64,7 +64,7 @@ function logging_write() {
 # loops and function with lots of heavy operations. This shouldn't be enabled all the time, only when really necessary
 function logging_startTrace() {
   exec {BASH_XTRACEFD}>"/tmp/trace$(date +%s)"
-  export PS4='- [$(basename $0):$LINENO--\t] '
+  export PS4='- [$(basename $0):$LINENO--\\t] '
   set -x
 }
 

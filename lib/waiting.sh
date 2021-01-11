@@ -24,7 +24,7 @@ function waiting_spinner() {
     local index=0
     echo -en "$1 "
     tput civis
-    while [[ $(ps -p "$2" | wc -l) -eq 2 ]]; do
+    while system_isProcessRunning "$2"; do
       echo -en "${steps[$index]}\b"
       index=$((++index % ${#steps[@]}))
       sleep 0.1

@@ -1,4 +1,4 @@
-#@PRIORITY: 0
+#@PRIORITY: 1
 source variables.sh
 
 # This function transforms a string by making all its chars in upper case
@@ -299,4 +299,15 @@ function string_isNumber() {
     bashlib_abort "$(caller)" "[string]"
   fi
   return $__STRING_IS_NUMBER__
+}
+
+# This function removes from a string all non-printable (alphanumeric) characters
+# arg0: The string to clean
+function string_removeNonPrintable() {
+  if [[ $# -eq 1 ]]; then
+    local -n __STRING_TO_SANITIZE__=$1
+    __STRING_TO_SANITIZE__=$(echo "$__STRING_TO_SANITIZE__" | tr -cd '\11\12\15\40-\176')
+  else
+    bashlib_abort "$(caller)" "[&string]"
+  fi
 }

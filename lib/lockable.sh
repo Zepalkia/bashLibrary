@@ -1,4 +1,4 @@
-#@PRIORITY: 0
+#@PRIORITY: 1
 #@DEPENDENCIES: inotify-tools
 
 # This function creates a unique global lock that will prevent any other process to call it until lockable_globalUnlock is called by it
@@ -77,7 +77,7 @@ function lockable_globalUnlock() {
     rmdir /tmp/.bashLock
   else
     lockfile=$(basename /tmp/.bashLock/*)
-    if [[ $(ps -p "$lockfile" 2>/dev/null | wc -l) -le 1 ]]; then
+    if ! system_isProcessRunning "$lockfile"; then
       rm -f "/tmp/.bashLock/$lockfile" &>/dev/null
       rmdir /tmp/.bashLock &>/dev/null
     fi
@@ -169,7 +169,7 @@ function lockable_scopeUnlock() {
     rmdir "$lockName"
   else
     lockFile=$(basename "$lockName/*")
-    if [[ $(ps -p "$lockFile" 2>/dev/null | wc -l) -le 1 ]]; then
+    if ! system_isProcessRunning "$lockFile"; then
       rm -f "$lockName/$lockFile"
       rmdir "$lockName"
     fi
@@ -264,7 +264,7 @@ function lockable_namedUnlock() {
       rmdir "/tmp/$1"
     else
       lockfile=$(basename /tmp/"$1"/*)
-      if [[ $(ps -p "$lockfile" 2>/dev/null | wc -l) -le 1 ]]; then
+      if ! system_isProcessRunning "$lockfile"; then
         rm -f "/tmp/$1/$lockfile"
         rmdir "/tmp/$1" &>/dev/null
       fi

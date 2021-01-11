@@ -15,7 +15,6 @@ function __EXIT__() {
   if [[ $1 -ne 0 ]]; then
     echo "Error while generating the library file in function ${FUNCNAME[2]}, the script exited with following result: $2 (errno $1)"
   fi
-  rm -r ".temp/" &>/dev/null
   lockable_namedUnlock "ABlock"
   exit $1
 }
@@ -24,7 +23,7 @@ bashlib_declareErrno EXIT_SUCCESS 0 "Success"
 bashlib_declareErrno EXIT_FAILURE 1 "Failure"
 bashlib_declareErrno EXIT_LOCKED 2 "Process already ongoing"
 if lockable_namedTryLock "ABlock" 2; then
-  version=0.0.9
+  version=0.0.10
   comment=true
   stopOnFailure=false
   testing=false
@@ -35,6 +34,7 @@ if lockable_namedTryLock "ABlock" 2; then
   options_insert "--no-comment" "The bashLibrary.sh file will not contain any comment or documentation"
   options_insert "--stop" "The generation of the library file will stop in case of failure during shellcheck validation"
   options_insert "--test" "Unit tests will be run at the end of the generation process"
+  options_insert "--release" "Resets the checksum to force the generation of all the components from scratch + implies --stop and --test"
   if [[ $# -gt 0 ]]; then
     if ! options_parse userOptions $*; then
       ui_showMessage err "Unexpected option ${userOptions[0]} found"
@@ -48,13 +48,28 @@ if lockable_namedTryLock "ABlock" 2; then
         --stop) stopOnFailure=true;;
         --test) testing=true;;
         --no-comment) comment=false;;
+        --release)
+          stopOnFailure=true
+          testing=true
+          rm -r ".checksums"
+          ;;
       esac
     done
   fi
   library="bashLibrary.sh"
   compressedLibrary="bashLibrary.small.sh"
-  mkdir ".temp"
+  mkdir ".temp" &>/dev/null
+  mkdir ".checksums" &>/dev/null
   for file in lib/*; do
+    checksum=$(md5sum "$file" | awk '{print $1}')
+    checkfile=".checksums/${file//*\//}"
+    str="[$file]:"
+    string_fixSize str 20
+    if [[ -f "$checkfile" ]] && [[ "$(< $checkfile)" == "$checksum" ]]; then
+      echo "$str Nothing to do"
+      continue
+    fi
+    rm -f .temp/*${file//*\/}
     tokens=()
     header=true
     scope=false
@@ -66,7 +81,7 @@ if lockable_namedTryLock "ABlock" 2; then
     oldIFS=$IFS
     IFS=''
     temporaryName="$priority$(basename $file)"
-    echo "Parsing component [$file]..."
+    echo "$str Parsing..."
     while read -r line; do
       if [[ $line != \#* ]]; then
         header=false
@@ -135,13 +150,13 @@ if lockable_namedTryLock "ABlock" 2; then
       nLine=$((++nLine))
     done < $file
     sed -i '1i#!/bin/bash' ".temp/$temporaryName"
+    echo "$checksum" > ".checksums/${file//*\//}"
     shellcheck ".temp/$temporaryName" &>/dev/null || true
     if [[ $? -ne 0 ]]; then
       if [[ $stopOnFailure == true ]]; then
         string_echoRich "-- Shellcheck *~rfailed~*"
         ls ".temp/"
         shellcheck ".temp/$temporaryName"
-        rm -r ".temp"
         lockable_namedUnlock "ABlock"
         exit 0
       else
@@ -161,7 +176,6 @@ EOF
   cat ".temp/9variables.sh" >> "$library"
   for component in .temp/*; do
     [[ ! $component =~ variables ]] && cat "$component" >> "$library"
-    rm "$component"
   done
   cat "$library" | grep -vE "^#.*" | gzip | base64 -w0 > "$compressedLibrary"
   shellcheck "$library" &>/dev/null
@@ -169,7 +183,6 @@ EOF
     if [[ $stopOnFailure == true ]]; then
       string_echoRich "-- Shellcheck *~rfailed~*"
       shellcheck "$library"
-      rm -r ".temp"
       lockable_namedLock "ABlock"
       exit 0
     else

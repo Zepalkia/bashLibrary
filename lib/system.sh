@@ -1,3 +1,4 @@
+#@PRIORITY: 0
 # This function checks if a given command exists or not in the system, this can be used as a way of checking if a package is installed or not and offers the
 # expecting command-line functionalities
 # arg0: The command that should be available on the system
@@ -110,7 +111,7 @@ function system_createSwap() {
       bashlib_abort "$(caller)" "must be run as root"
     fi
   else
-    bashlib_abort "$(caller)" "[Number of swap Mo to create]"
+    bashlib_abort "$(caller)" "[Number of swap Mo to create] {path to swap file}"
   fi
   return $__SWAP_CREATED__
 }
@@ -174,6 +175,62 @@ function system_coresInUse() {
     local percentage=0
     percentage=$(top -b -n 1 | head -20 | awk '{print $9}' | tail -13 | paste -sd+ | bc)
     __CORES_IN_USE__=$((${percentage%.*} / 100))
+  else
+    bashlib_abort "$(caller)" "[&result]"
+  fi
+}
+
+# This function checks if a given process (pid) is running on the system
+# arg0: The PID of the process to check
+# return: 0 if the process is running, 1 otherwise
+# Example:
+#   sudo sleep 60 &
+#   while system_isProcessRunning "$1"; do
+#     # Do stuff during 1 minute
+#   done
+function system_isProcessRunning() {
+  local processIsRunning=0
+  if [[ $# -eq 1 ]]; then
+    ps -p "$1" &>/dev/null
+    processIsRunning=$?
+  else
+    bashlib_abort "$(caller)" "[PID]"
+  fi
+  return $processIsRunning
+}
+
+# This function checks if a given process (pid) is killable by the running instance
+# arg0: The PID of the process to check
+# return: 0 if the process is killable, 1 otherwise
+# Example:
+#   sudo sleep 60 &
+#   if ! system_isProcessKillable "$!"; then
+#      echo "The process has been launched as root, I cannot kill it !"
+#   fi
+function system_isProcessKillable() {
+  local processIsKillable=0
+  if [[ $# -eq 1 ]]; then
+    kill -0 "$1" &>/dev/null
+    processIsKillable=$?
+  else
+    bashlib_abort "$(caller)" "[PID]"
+  fi
+  return $processIsKillable
+}
+
+# This function grabs a snapshot of the current /proc/meminfo values and return the ram/swap info inside a map (values will be in kB)
+# arg0: The name of the variable that will contain the result (will be cleaned and redeclared with -A)
+function system_getMemoryInfo() {
+  if [[ $# -eq 1 ]]; then
+    local meminfo=$(< /proc/meminfo)
+    local -n __MEMINFOS__="$1"
+    unset "$1"
+    declare -gA "$1"
+    __MEMINFOS__["ram_total"]=$(echo "$meminfo" | grep "MemTotal" | awk '{print $2}')
+    __MEMINFOS__["ram_free"]=$(echo "$meminfo" | grep "MemFree" | awk '{print $2}')
+    __MEMINFOS__["ram_available"]=$(echo "$meminfo" | grep "MemAvailable" | awk '{print $2}')
+    __MEMINFOS__["swap_total"]=$(echo "$meminfo" | grep "SwapTotal" | awk '{print $2}')
+    __MEMINFOS__["swap_free"]=$(echo "$meminfo" | grep "SwapFree" | awk '{print $2}')
   else
     bashlib_abort "$(caller)" "[&result]"
   fi

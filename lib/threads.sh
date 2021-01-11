@@ -1,4 +1,4 @@
-#@PRIORITY: 1
+#@PRIORITY: 2
 source string.sh
 source lockable.sh
 # Here's a global example showing how the following functions can be used altogether
@@ -112,10 +112,10 @@ function threads_tryJoin() {
   if [[ $# -eq 2 ]]; then
     if [[ ${__BL_THREAD_POOL__["$1"]} ]]; then
       timeStart=$(date +%s)
-      while [[ $(ps -p "${__BL_THREAD_POOL__["$1"]}" | wc -l) -gt 1 ]] && [[ $(($(date +%s) - timeStart)) -lt $2 ]]; do
+      while system_isProcessRunning "${__BL_THREAD_POOL__["$1"]}" && [[ $(($(date +%s) - timeStart)) -lt $2 ]]; do
         sleep .5
       done
-      if [[ $(ps -p "${__BL_THREAD_POOL__["$1"]}" | wc -l) -le 1 ]]; then
+      if ! system_isProcessRunning "${__BL_THREAD_POOL__["$1"]}"; then
         __BL_THREAD_TRY_JOINED__=0
       fi
     fi
@@ -160,7 +160,7 @@ function threads_kill() {
 function threads_isRunning() {
   local __THREAD_IS_RUNNING__=1
   if [[ $# -eq 1 ]]; then
-    if [[ ${__BL_THREAD_POOL__["$1"]} ]] && [[ $(ps -p "${__BL_THREAD_POOL__["$1"]}" | wc -l) -gt 1 ]]; then
+    if [[ ${__BL_THREAD_POOL__["$1"]} ]] && system_isProcessRunning "${__BL_THREAD_POOL__["$1"]}"; then
       __THREAD_IS_RUNNING__=0
     fi
   else
