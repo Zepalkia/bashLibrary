@@ -37,9 +37,9 @@ function string_toLowerCase() {
 # arg2: The name of the variable that will contain the trimmed string
 # Example:
 #   str=" string with spaces "
-#   string_trim str "leading" str0
-#   string_trim str "trailing" str1
-#   string_trim str "all" str2
+#   string_trim "$str" "leading" str0
+#   string_trim "$str" "trailing" str1
+#   string_trim "$str" "all" str2
 #   echo "String without leading whitespaces: [$str0]"
 #   echo "String without trailing whitespaces: [$str1]"
 #   echo "String without any whitespaces: [$str2]"

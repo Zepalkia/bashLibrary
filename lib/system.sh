@@ -222,10 +222,11 @@ function system_isProcessKillable() {
 # arg0: The name of the variable that will contain the result (will be cleaned and redeclared with -A)
 function system_getMemoryInfo() {
   if [[ $# -eq 1 ]]; then
-    local meminfo=$(< /proc/meminfo)
+    local meminfo=""
     local -n __MEMINFOS__="$1"
     unset "$1"
     declare -gA "$1"
+    meminfo=$(< /proc/meminfo)
     __MEMINFOS__["ram_total"]=$(echo "$meminfo" | grep "MemTotal" | awk '{print $2}')
     __MEMINFOS__["ram_free"]=$(echo "$meminfo" | grep "MemFree" | awk '{print $2}')
     __MEMINFOS__["ram_available"]=$(echo "$meminfo" | grep "MemAvailable" | awk '{print $2}')
