@@ -179,7 +179,7 @@ function xml_getSingleValue() {
 }
 
 # This function changes an element/attribute value from a givem xml path (if exists), this modification is ONLY done inside the loaded object, see xml_dump to
-# update the xml file in the disk
+# update the xml file in the disk. In case the attribute doesn't exist but the path to the object is, the attribute will be ADDED in the loaded object
 # arg0: The xml 'object' variable
 # arg1: The xml path to update /see top of the file for syntax)
 # arg2: The new value to set
@@ -196,6 +196,9 @@ function xml_setSingleValue() {
       else
         __XML_OBJECT__["$2"]="$3"
       fi
+      __VALUE_SET_SUCCESS__=0
+    elif [[ "$2" =~ "@" ]] && [[ ! "${2%*@*}" =~ "@" ]] && [[ ${__XML_OBJECT__["${2%*@*}"]} ]]; then
+      __XML_OBJECT__["$2"]="\"$3\""
       __VALUE_SET_SUCCESS__=0
     fi
   else

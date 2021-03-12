@@ -35,6 +35,12 @@ assertSuccess xml_setSingleValue XML "xml.newValues.nv0@atr1" 2
 assertSuccess xml_getSingleValue XML "xml.newValues.nv0@atr1" value
 assertSuccess xml_getSingleValue XML "xml.newValues.nv0@atr2" value1
 assertEqual \$value \$value1
+assertSuccess xml_setSingleValue XML "xml.newValues.nv0@atr3" 2
+assertSuccess xml_getSingleValue XML "xml.newValues.nv0@atr3" value
+assertEqual \$value \$value1
+assertFailure xml_setSingleValue XML "xml.newValues.nv@new" 1
+assertFailure xml_setSingleValue XML "xml.newValues.nv0@atr1@" 1
+assertFailure xml_setSingleValue XML "xml.newValues.nv0@atr1@a1" 1
 assertSuccess xml_dump XML
 TEST
 
@@ -46,6 +52,7 @@ testing_testCase "XML reformat compatibility" << TEST
 assertSuccess xml_load XML /tmp/configuration.xml
 assertSuccess xml_getSingleValue XML "xml.newValues.nv0@atr1" value
 assertSuccess xml_getSingleValue XML "xml.newValues.nv0@atr2" value1
+assertSuccess xml_getSingleValue XML "xml.newValues.nv0@atr3" value1
 assertEqual \$value \$value1
 TEST
 
