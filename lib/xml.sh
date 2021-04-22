@@ -290,12 +290,13 @@ function xml_dump() {
     local filePath="${__XML_FILE_CONTENT__["FROOT"]}"
     local root="${__XML_FILE_CONTENT__["XROOT"]}"
     local path="$root" printedPath="" lastPath=""
-    local tag="" value="" attribute="" attributeValue="" tmp=""
+    local tag="" value="" attribute="" attributeValue="" tmp="" tmpFilePath=""
     local attributes=()
     if [[ $# -eq 2 ]]; then
       filePath="$2"
     fi
-    rm -f "$filePath"
+    tmpFilePath="$filePath"
+    filePath=".$tmpFilePath_dump"
     unset "$1[FROOT]" "$1[XROOT]"
     while [[ ${#__XML_FILE_CONTENT__[@]} -gt 0 ]]; do
       if [[ "$lastPath" == "$root" ]] && [[ "${path##*.}" == "$root" ]]; then
@@ -361,6 +362,7 @@ function xml_dump() {
         fi
       fi
     done
+    mv "$filePath" "$tmpFilePath"
   else
     bashlib_abort "$(caller)" "[&XML object] {new path for file}"
   fi

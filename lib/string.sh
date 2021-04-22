@@ -135,7 +135,7 @@ function string_rand() {
 # arg1: The name of the variable that will contain the result (a string ready to be echoed)
 # Example:
 #   str="~rHello~, _this_ ~yis~ a *formated* ~pc~~wo~~rn~~bt~~ge~~cn~~yt~; *_double ~bformated~_*"
-#   string_rich str, result
+#   string_rich "$str" result
 #   echo "$result"
 # The following 'encoding' are ready to be used:
 # **...** > bold + white coloring

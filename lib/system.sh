@@ -79,11 +79,11 @@ function system_listPackages() {
 
 # This function will create and activate inside the system a new swap file of a given size. By default /swapfile will be used but an optional path can be given
 # to define another swap file location.
-# arg0: The number of BYTES of swap to create (be careful here to have enough space on the partition, this has to be checked BEFORE calling this function)
+# arg0: The number of MEGABYTES of swap to create (be careful here to have enough space on the partition, this has to be checked BEFORE calling this function)
 # arg1: The (optional) path where the file will be created, by default /swapfile is used
 # return: 0 if the swap creation was successful, 1 otherwise
 # Example:
-#   if system_createSwap $((4000 * 1000000)); then
+#   if system_createSwap 4000; then
 #     echo "My system has now 4Go of SWAP !"
 #   fi
 # Note:
