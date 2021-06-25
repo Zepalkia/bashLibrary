@@ -296,7 +296,7 @@ function xml_dump() {
       filePath="$2"
     fi
     tmpFilePath="$filePath"
-    filePath=".$tmpFilePath_dump"
+    filePath="${tmpFilePath}_dump"
     unset "$1[FROOT]" "$1[XROOT]"
     while [[ ${#__XML_FILE_CONTENT__[@]} -gt 0 ]]; do
       if [[ "$lastPath" == "$root" ]] && [[ "${path##*.}" == "$root" ]]; then
