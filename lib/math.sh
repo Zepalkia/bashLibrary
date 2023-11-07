@@ -64,3 +64,42 @@ function math_linspace() {
     bashlib_abort "$(caller)" "[&array] [start] [end] [nPoints]"
   fi
 }
+
+# This function converts a decimal value into its hex byte representation (e.g. 129 will be \x81), ready to be echo-ed or given to another program
+# arg0: The decimal value to convert
+# arg1: The number of bytes to force (if 0 will be dynamic, if less  byte than given '0' will be pre-pended to reach the given number of bytes
+# arg2: The name of the variable that will contain the result
+# Example:
+#   math_decToHex 129 2 result
+function math_decToHex() {
+  if [[ $# -eq 3 ]]; then
+    local -n __HEX_RESULT=$3
+    __HEX_RESULT=""
+    if [[ $2 -eq 0 ]]; then
+      __HEX_RESULT="\x$(printf "%x" $1)"
+    else
+      local hex=$(printf "%0$(($2 * 2))x" $1)
+      local index=0
+      for ((; index < ${#hex}; index += 2)); do
+        __HEX_RESULT="$__HEX_RESULT\x${hex:$index:2}"
+      done
+    fi
+  else
+    bashlib_abort "$(caller)" "[decimal value] [number of bytes (0 for dynamic)] [&result]"
+  fi
+}
+
+# This function converts a given byte/char into its integer value (e.g. 'A' will be 65)
+# arg0: The byte to convert
+# arg1: The name of the variable that will contain the result
+# Example:
+#   math_byteToInt A result
+#@DEPENDS: hexdump
+function math_byteToInt() {
+  if [[ $# -eq 2 ]]; then
+    local -n __INT_RESULT=$2
+    __INT_RESULT=$(echo -n "$1" | hexdump -v -e '"%d"')
+  else
+    bashlib_abort "$(caller)" "[byte] [&result]"
+  fi
+}
