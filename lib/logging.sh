@@ -47,11 +47,11 @@ function logging_write() {
     line=$(caller | awk '{print $1}')
     from=$(caller | awk '{print $2}')
     if [[ -n "$1" ]]; then
-      echo -e "[$timestamp] ($from:$line) $1" >&${__BL_LOG_FD__}
+      echo -e "[$timestamp] ($from:$line) $1" >&"${__BL_LOG_FD__}"
     else
       local inputLine=""
       while read -r inputLine; do
-        echo -e "[$timestamp] ($from:$line) $inputLine" >&${__BL_LOG_FD__}
+        echo -e "[$timestamp] ($from:$line) $inputLine" >&"${__BL_LOG_FD__}"
       done
     fi
   else

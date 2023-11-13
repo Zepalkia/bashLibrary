@@ -300,6 +300,7 @@ function ui_booleanMenu() {
       idMap[$key]=$count
       choiceMap[$key]=${optionMsg[$count]}
       math_max "${columnSizes[$col]}" "${#value}" temporaryValue
+      # shellcheck disable=2004
       columnSizes[$col]=$temporaryValue
       row=$((++row))
       count=$((++count))

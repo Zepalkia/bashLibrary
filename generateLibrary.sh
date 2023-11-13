@@ -23,7 +23,7 @@ bashlib_declareErrno EXIT_SUCCESS 0 "Success"
 bashlib_declareErrno EXIT_FAILURE 1 "Failure"
 bashlib_declareErrno EXIT_LOCKED 2 "Process already ongoing"
 if lockable_namedTryLock "ABlock" 2; then
-  version=0.0.12
+  version=0.1.0
   comment=true
   stopOnFailure=false
   testing=false
@@ -120,7 +120,7 @@ if lockable_namedTryLock "ABlock" 2; then
                 for token in ${tokens[@]}; do
                   if ! system_packageInstalled $token; then
                     scope=true
-                    reason="depends on missing library"
+                    reason="depends on missing library ($token)"
                     break
                   fi
                 done
@@ -144,7 +144,7 @@ if lockable_namedTryLock "ABlock" 2; then
             if [[ $comment == false ]] && [[ $line == \#* ]]; then
               continue;
             fi
-            [[ $scope == false ]] && [[ ${#line} -gt 0 ]] && echo -e "$line" >> ".temp/$temporaryName"
+            [[ $scope == false ]] && [[ ${#line} -gt 0 ]] && echo -e "${line//\\/\\\\}" >> ".temp/$temporaryName"
           fi
         fi
       fi

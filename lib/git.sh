@@ -88,7 +88,7 @@ function git_changeBranch() {
   else
     bashlib_abort "$(caller)" "[target branch] [force checkout]"
   fi
-  return $__BRANCH_CHANGE_SUCCESS__
+  return "$__BRANCH_CHANGE_SUCCESS__"
 }
 
 # This function resets the currently cached credentials by git

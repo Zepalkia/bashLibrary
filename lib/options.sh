@@ -61,7 +61,7 @@ function options_insert() {
 $helpString
 .RE
 .PP"
-    echo "$string" >&${BL_OPT_FD}
+    echo "$string" >&"${BL_OPT_FD}"
     __BL_ARGUMENTS__["$option"]="$string"
     if [[ "$optionAlias" != "" ]]; then
       __BL_ALIASES__["$optionAlias"]="$option"
@@ -73,7 +73,7 @@ $helpString
 
 # This function displays the auto-generated help menu for the application based on the previously inserted available option using 'man'
 function options_display() {
-  cat /proc/$$/fd/$BL_OPT_FD > /tmp/.help
+  cat /proc/$$/fd/"$BL_OPT_FD" > /tmp/.help
   man /tmp/.help
   rm /tmp/.help
 }

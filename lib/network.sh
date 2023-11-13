@@ -145,7 +145,7 @@ function network_stopHotspot() {
 #  Any external computer plugged into the second interface (either WiFi hotspot or Ethernet connection) will be able to grab the connection given by the main
 #  interface. Be aware than this computer could need to specify the route and/or grab an IP address depending on your situation, this sharing will only work if
 #  all the other settings are fine as well
-#@DEPENDS iptables
+#@DEPENDS: iptables
 function network_shareInternet() {
   if [[ $# -eq 2 ]]; then
     sudo iptables -F
@@ -192,7 +192,7 @@ function network_disableWifiModule() {
   else
     bashlib_abort "$(caller)" "[disable permanently (boolean)]"
   fi
-  return $__MODULE_DISABLED__
+  return "$__MODULE_DISABLED__"
 }
 
 #@DEPENDS: lsof

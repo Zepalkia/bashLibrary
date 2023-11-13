@@ -90,7 +90,7 @@ function threads_join() {
   local __BL_THREAD_JOINED__=1
   if [[ $# -eq 1 ]]; then
     if [[ ${__BL_THREAD_POOL__["$1"]} ]]; then
-      wait ${__BL_THREAD_POOL__["$1"]} &>/dev/null
+      wait "${__BL_THREAD_POOL__["$1"]}" &>/dev/null
       __BL_THREAD_JOINED__=0
     fi
   else
@@ -199,6 +199,7 @@ function threads_poolClear() {
     fi
     threads_tryJoin "$thr" 5
     if threads_delete "$thr"; then
+      # shellcheck disable=SC2184
       unset __BL_THREAD_POOL__["$thr"]
     fi
   done

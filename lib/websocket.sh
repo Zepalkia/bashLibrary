@@ -48,7 +48,7 @@ function websocket_applyMask() {
     local -n __WS_MASKED=$3
     local index=0
     for ((; index < ${#message}; ++index)); do
-      local value=$(($index % ${#key}))
+      local value=$((index % ${#key}))
       local char=${message:$index:1}
       local keyChar=${key:$value:1}
       local messageByte=""
@@ -66,28 +66,31 @@ function websocket_applyMask() {
 
 # Performs the initial WebSocket Handshake following RFC6455 standards using the given FileDescriptor
 # arg0: The already-open socket filescriptor
+# arg1: The server host
+# arg2: The server port
 # return: 0 if successful, 1 otherwise
 function websocket_performHandshake() {
   local result=1
   if [[ $# -eq 1 ]]; then
     local __WEBSOCKET=$1
     echo "GET / HTTP/1.1
-Host: $host:$port
-Origin: http://$host:$port
+Host: $2:$3
+Origin: http://$2:$3
 Connection: Upgrade
 Upgrade: websocket
 Sec-WebSocket-Key: $(openssl rand -base64 16)
 Sec-WebSocket-Version: 13
-" >&$__WEBSOCKET
+" >&"$__WEBSOCKET"
     # The remote should send the '101 protocol upgrade payload' back in a line-by-line way, here we just parse it with a max timeout of 2 sec. to stop once
     # we received everything (everything has to be consumed now)
-    while read -t2 <&$__WEBSOCKET; do
+    # shellcheck disable=SC2162
+    while read -t2 <&"$__WEBSOCKET"; do
       case "$REPLY" in
         Connection*) [[ "$REPLY" =~ "Upgrade" ]] && result=0;;
       esac
     done
   else
-    bashlib_abort "$(caller)" "[fd of the socket]"
+    bashlib_abort "$(caller)" "[fd of the socket] [server host] [server port]"
   fi
   return $result
 }
@@ -99,13 +102,14 @@ function websocket_send() {
   if [[ $# -eq 2 ]]; then
     local __WEBSOCKET="$1"
     local msg=$2
-    local mask=$(head /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 4)
+    local mask=""
     local header=""
     local masked=""
+    mask=$(head /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 4)
     # Generates the header and masks the payload following the standards
     websocket_buildHeader "$msg" header
     websocket_applyMask "$msg" "$mask" masked
-    echo -en "$header$mask$masked" >&$__WEBSOCKET
+    echo -en "$header$mask$masked" >&"$__WEBSOCKET"
   else
     bashlib_abort "$(caller)" "[websocket] [message to send]"
   fi
@@ -119,7 +123,8 @@ function websocket_recv() {
     local __WEBSOCKET="$1"
     local -n __WS_REPLY=$2
     # We read until we reach \0 (expected to be the final char) / we reached a timeout of 1 sec. without any incoming data
-    while read -d $'\0' -t1 <&$__WEBSOCKET; do
+    # shellcheck disable=SC2162
+    while read -d $'\0' -t1 <&"$__WEBSOCKET"; do
       __WS_REPLY="$__WS_REPLY$REPLY"
     done
   else
@@ -133,8 +138,8 @@ function websocket_recv() {
 # arg2: The name of the variable that will contain the reply from the remote
 function websocket_sendRecv() {
   if [[ $# -eq 3 ]]; then
-    websocket_send $1 $2
-    websocket_recv $1 $3
+    websocket_send "$1" "$2"
+    websocket_recv "$1" "$3"
   else
     bashlib_abort "$(caller)" "[websocket] [message to send] [&reply]"
   fi
@@ -154,9 +159,9 @@ function websocket_create() {
     # The /dev/tcp "file" is only available in bash, probably not in other shells as it isn't POSIX at all
     # The {__BS_WS_FD} part is only available in bash starting v4.1 so older releases will not be able to run this, the point of
     # this syntax is to automatically assign the next free file descriptor to the variable without having to manually specify one.
-    exec {__BL_WS_FD}<>/dev/tcp/$1/$2
+    exec {__BL_WS_FD}<>/dev/tcp/"$1"/"$2"
     # Performs the handshake to validate the socket is properly connected to a websocket server
-    if websocket_performHandshake $__BL_WS_FD; then
+    if websocket_performHandshake $__BL_WS_FD "$1" "$2"; then
       __WEBSOCKET="$__BL_WS_FD"
     else
       # In case of failure the fd is immediately closed

@@ -76,10 +76,11 @@ function math_decToHex() {
     local -n __HEX_RESULT=$3
     __HEX_RESULT=""
     if [[ $2 -eq 0 ]]; then
-      __HEX_RESULT="\x$(printf "%x" $1)"
+      __HEX_RESULT="\x$(printf "%x" "$1")"
     else
-      local hex=$(printf "%0$(($2 * 2))x" $1)
+      local hex=0
       local index=0
+      hex=$(printf "%0$(($2 * 2))x" "$1")
       for ((; index < ${#hex}; index += 2)); do
         __HEX_RESULT="$__HEX_RESULT\x${hex:$index:2}"
       done

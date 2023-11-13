@@ -54,9 +54,11 @@ function timer_reset() {
 function timer_getValue() {
   if [[ $# -eq 2 ]] && [[ ${__BL_THREAD_POOL__["$1"]} ]]; then
     local -n __TIMER_VALUE__=$2
+    # shellcheck disable=SC2086
     lastValue=$(tail -1 /proc/${__BL_THREAD_POOL__["$1"]}/fd/5)
     threads_notify "$1" "36"
     sleep .1
+    # shellcheck disable=SC2086
     __TIMER_VALUE__=$(tail -1 /proc/${__BL_THREAD_POOL__["$1"]}/fd/5)
   else
     bashlib_abort "$(caller)" "[timer] [&result]"

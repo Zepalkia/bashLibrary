@@ -79,7 +79,7 @@ function utilities_upgradeRequired() {
   else
     bashlib_abort "$(caller)" "[current version] [available version]"
   fi
-  return $__IS_UPGRADE_REQUIRED__
+  return "$__IS_UPGRADE_REQUIRED__"
 }
 
 # This function uses bc to convert a given number of bytes into a readable string
